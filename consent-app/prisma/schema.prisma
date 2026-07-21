@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         String    @default("Data Collector")
+  consents     Consent[]
+  createdAt    DateTime  @default(now())
+}
+
+model Consent {
+  id                       String   @id @default(cuid())
+  referenceNumber          String   @unique
+  participantName          String
+  participantPhone         String?
+  programName              String   @default("10X Program")
+  consentFormType          String   @default("sample-space")
+  consentDecision          String
+  serviceRequired          String?
+  authorizedPartners       String?
+  dataShared               String?
+  informationUnderstood    Boolean  @default(false)
+  signingMethod            String
+  signatureFile            String
+  signatureFileKey         String
+  interpreterUsed          Boolean  @default(false)
+  interpreterName          String?
+  interpreterOrganization  String?
+  interpreterLanguage      String?
+  interpreterSignatureFile String?
+  interpreterSignatureFileKey String?
+  collectorId              String?
+  collector                User?    @relation(fields: [collectorId], references: [id])
+  consentDate              DateTime
+  consentFormVersion       String   @default("10X-SAMPLE-v1")
+  pdfFile                  String?
+  pdfFileKey               String?
+  pdfGeneratedAt           DateTime?
+  status                   String   @default("locked")
+  createdAt                DateTime @default(now())
+}

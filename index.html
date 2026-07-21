@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Program Participants Consent Form XXXXXXXXXXXX</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f7f6;
+        --panel: #ffffff;
+        --text: #1f2933;
+        --muted: #5f6f7a;
+        --line: #d9e1e5;
+        --accent: #0f766e;
+        --accent-dark: #0b5f59;
+        --soft: #e8f4f2;
+        --danger: #b42318;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 16px;
+        line-height: 1.55;
+      }
+
+      .page-shell {
+        width: min(210mm, calc(100% - 24px));
+        margin: 28px auto;
+      }
+
+      .form-panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 2px;
+        box-shadow: 0 20px 50px rgba(31, 41, 51, 0.14);
+        min-height: 297mm;
+        overflow: hidden;
+      }
+
+      .form-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 22mm 18mm 10mm;
+        border-bottom: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .eyebrow {
+        margin: 0 0 4px;
+        color: var(--accent-dark);
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        margin-bottom: 0;
+        font-size: clamp(1.65rem, 2vw, 2.15rem);
+        line-height: 1.15;
+      }
+
+      h2 {
+        margin-bottom: 12px;
+        font-size: 1.08rem;
+      }
+
+      form {
+        padding: 0 18mm 18mm;
+      }
+
+      .section {
+        padding: 14px 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .grid {
+        display: grid;
+        gap: 18px;
+      }
+
+      .grid.two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid.three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      label {
+        display: block;
+        margin-bottom: 7px;
+        color: #344452;
+        font-size: 0.92rem;
+        font-weight: 700;
+      }
+
+      input[type="text"],
+      input[type="date"],
+      input[type="url"] {
+        width: 100%;
+        min-height: 34px;
+        border: 0;
+        border-bottom: 1.5px solid #6b7c86;
+        border-radius: 0;
+        background: transparent;
+        color: var(--text);
+        font: inherit;
+        padding: 5px 2px 3px;
+      }
+
+      input[type="file"] {
+        width: 100%;
+        min-height: 42px;
+        border: 1px solid #b9c6ce;
+        border-radius: 6px;
+        background: #ffffff;
+        color: var(--text);
+        font: inherit;
+        padding: 8px;
+      }
+
+      input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.16);
+        outline: 0;
+      }
+
+      .inline-input {
+        display: inline-block;
+        width: min(260px, 100%);
+        min-height: 34px;
+        margin: 0 4px;
+      }
+
+      .inline-input.wide {
+        width: min(360px, 100%);
+      }
+
+      .note,
+      .signature-header p {
+        color: var(--muted);
+      }
+
+      .interpreter-statement {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 18px;
+      }
+
+      .statement-row {
+        display: grid;
+        align-items: end;
+        gap: 8px;
+      }
+
+      .statement-row.first {
+        grid-template-columns: auto minmax(120px, 1fr) auto minmax(160px, 1.2fr) minmax(190px, 1fr);
+      }
+
+      .statement-row.language {
+        grid-template-columns: auto minmax(150px, 1fr) minmax(260px, 2fr);
+      }
+
+      .check-list {
+        display: grid;
+        gap: 10px;
+        margin: 0;
+        padding-left: 22px;
+      }
+
+      .check-list li::marker {
+        color: var(--accent);
+      }
+
+      .consent-box {
+        padding: 18px;
+        border: 1px solid #a8d6d1;
+        border-radius: 2px;
+        background: var(--soft);
+      }
+
+      .checkbox-row {
+        display: grid;
+        grid-template-columns: 22px 1fr;
+        gap: 12px;
+        margin: 0;
+        color: var(--text);
+        font-weight: 400;
+      }
+
+      .header-actions,
+      .footer-actions,
+      .signature-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .footer-actions {
+        justify-content: flex-end;
+      }
+
+      button {
+        min-height: 42px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 700;
+        padding: 9px 16px;
+      }
+
+      .primary {
+        background: var(--accent);
+        color: #ffffff;
+      }
+
+      .secondary {
+        border-color: #aebdc5;
+        background: #ffffff;
+        color: var(--text);
+      }
+
+      .form-message {
+        min-height: 24px;
+        margin-bottom: 18px;
+        color: var(--accent-dark);
+        font-weight: 700;
+      }
+
+      .form-message.error {
+        color: var(--danger);
+      }
+
+      .signature-pad {
+        margin-top: 16px;
+        padding: 14px 0 4px;
+        border-top: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .signature-header h3 {
+        margin: 0 0 3px;
+        font-size: 1rem;
+      }
+
+      .signature-canvas {
+        display: block;
+        width: 100%;
+        height: 118px;
+        border: 0;
+        border-bottom: 1.5px solid #6b7c86;
+        border-radius: 0;
+        background: #ffffff;
+        cursor: crosshair;
+        touch-action: none;
+      }
+
+      .signature-upload {
+        display: grid;
+        grid-template-columns: minmax(180px, 240px) 1fr;
+        align-items: center;
+        gap: 12px;
+        margin-top: 12px;
+      }
+
+      .signature-preview {
+        display: none;
+      }
+
+      @media (max-width: 780px) {
+        .page-shell {
+          width: 100%;
+          margin: 0;
+        }
+
+        .form-panel {
+          border: 0;
+          border-radius: 0;
+        }
+
+        .form-header,
+        form {
+          padding-left: 18px;
+          padding-right: 18px;
+        }
+
+        .form-header,
+        .signature-header {
+          display: grid;
+        }
+
+        .form-header {
+          padding-top: 24px;
+          padding-bottom: 18px;
+        }
+
+        .grid.two,
+        .grid.three {
+          grid-template-columns: 1fr;
+        }
+
+        .inline-input,
+        .inline-input.wide {
+          display: block;
+          width: 100%;
+          margin: 6px 0;
+        }
+
+        .statement-row.first,
+        .statement-row.language {
+          grid-template-columns: 1fr;
+        }
+
+        .signature-upload {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media print {
+        body {
+          background: #ffffff;
+          font-size: 12pt;
+        }
+
+        .page-shell {
+          width: 100%;
+          margin: 0;
+        }
+
+        .form-panel {
+          border: 0;
+          box-shadow: none;
+        }
+
+        .no-print {
+          display: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page-shell">
+      <section class="form-panel" aria-labelledby="form-title">
+        <header class="form-header">
+          <div>
+            <p class="eyebrow">RETI Program</p>
+            <h1 id="form-title">Program Participants Consent Form</h1>
+          </div>
+          <div class="header-actions no-print">
+            <button class="secondary" type="button" id="saveDraftButton">Save draft</button>
+            <button class="secondary" type="button" id="printButton">Print</button>
+          </div>
+        </header>
+
+        <form id="consentForm" novalidate>
+          <section class="section">
+            <label for="implementingOrganization">Implementing organization</label>
+            <input id="implementingOrganization" name="implementingOrganization" type="text" required />
+
+            <p class="consent-copy">
+              <span data-field="implementingOrganization">The implementing organization</span>
+              is committed to improving its programs and ensuring they have a positive impact on
+              program participants. To achieve this, we collect and analyze data about program
+              participants. We value your privacy and are committed to protecting your personal
+              data. This consent form explains how we collect, use, and share your personal
+              information as part of the RETI Program. Please read this form carefully and sign to
+              indicate your consent.
+            </p>
+            <p class="note">Please read this form carefully before you decide.</p>
+          </section>
+
+          <section class="section grid two">
+            <div>
+              <label for="programName">Program name</label>
+              <input id="programName" name="programName" type="text" value="10X Program" required />
+            </div>
+            <div>
+              <label for="dataCollectorOrganization">Data collector organization</label>
+              <input id="dataCollectorOrganization" name="dataCollectorOrganization" type="text" required />
+            </div>
+            <div>
+              <label for="dataCollectorName">Data collector name</label>
+              <input id="dataCollectorName" name="dataCollectorName" type="text" />
+            </div>
+            <div>
+              <label for="dataCollectorContact">Data collector contact information</label>
+              <input id="dataCollectorContact" name="dataCollectorContact" type="text" required />
+            </div>
+          </section>
+
+          <section class="section">
+            <h2>1. Purpose of Data Collection and Use</h2>
+            <p>
+              We collect your personal data to make analysis on the progress of the Program and
+              improve the Program and learn from the data collected, including monitoring and
+              evaluating the effectiveness of the RETI program and to learn how to improve it for
+              future participants.
+            </p>
+          </section>
+
+          <section class="section">
+            <h2>2. What Data Do We Collect?</h2>
+            <p>We may collect some or all of the following information about you:</p>
+            <ul class="check-list">
+              <li>Name, age, and gender</li>
+              <li>Contact details</li>
+              <li>Participation details in the Program</li>
+              <li>Level of Education</li>
+              <li>Marital status</li>
+              <li>Refugee or displaced persons status</li>
+              <li>Presence of a disability</li>
+              <li>Feedback and responses to surveys</li>
+            </ul>
+          </section>
+
+          <section class="section">
+            <h2>3. Who Will Your Data Be Shared With?</h2>
+            <p>We may share your data with the following parties:</p>
+            <ul class="check-list">
+              <li>Mastercard Foundation</li>
+              <li>
+                Third-party data processors hired by Mastercard Foundation to assist with
+                monitoring and evaluation, for example data storage and analysis organizations.
+              </li>
+              <li>
+                For additional information on how
+                <input
+                  class="inline-input"
+                  aria-label="Organization processing personal data"
+                  name="privacyOrganization"
+                  type="text"
+                />
+                processes personal data, please visit
+                <input
+                  class="inline-input wide"
+                  aria-label="Privacy policy URL"
+                  name="privacyPolicyUrl"
+                  type="url"
+                />
+                to access a copy of its privacy policy.
+              </li>
+              <li>
+                The Foundation's privacy policy can be accessed via
+                <a href="https://mastercardfdn.org/privacy/" target="_blank" rel="noreferrer">
+                  https://mastercardfdn.org/privacy/
+                </a>
+              </li>
+            </ul>
+          </section>
+
+          <section class="section">
+            <h2>4. Your Rights</h2>
+            <p>
+              You are not obligated to give your consent. You are eligible to participate in all
+              aspects of the program, regardless of your decision to share your data. Consent to
+              data sharing is entirely separate from program participation. You have the following
+              rights regarding your personal data:
+            </p>
+            <ul class="check-list">
+              <li><strong>Right to access:</strong> You have the right to request a copy of the information we hold about you.</li>
+              <li><strong>Right to rectification:</strong> You have the right to ask us to correct any inaccurate information we hold about you.</li>
+              <li><strong>Right to erasure:</strong> You have the right to ask us to delete your information.</li>
+              <li><strong>Right to restriction of processing:</strong> You have the right to ask us to restrict the processing of your information.</li>
+              <li><strong>Right to object to processing:</strong> You have the right to object to the processing of your information.</li>
+              <li><strong>Right to data portability:</strong> You have the right to request that your data be transferred to another organization.</li>
+            </ul>
+          </section>
+
+          <section class="section">
+            <h2>5. Withdrawing Your Consent</h2>
+            <p>
+              You can withdraw your consent to share your data at any time. This will not affect
+              your ability to participate in the program. To withdraw your consent, please contact:
+            </p>
+            <label for="withdrawalContact">Withdrawal contact</label>
+            <input id="withdrawalContact" name="withdrawalContact" type="text" required />
+          </section>
+
+          <section class="section">
+            <h2>6. Understanding Your Choices</h2>
+            <p>
+              By consenting to share your data, you are helping for the success of RETI program for
+              you and future participants.
+            </p>
+
+            <div class="consent-box">
+              <label class="checkbox-row">
+                <input id="consentAgreement" name="consentAgreement" type="checkbox" required />
+                <span>
+                  I agree to share my data with
+                  <input
+                    class="inline-input"
+                    aria-label="Organization receiving shared data"
+                    name="dataSharingOrganization"
+                    type="text"
+                    required
+                  />
+                  and Mastercard Foundation as well as any third-party data processors they may use
+                  for the purposes described above.
+                </span>
+              </label>
+            </div>
+          </section>
+
+          <section class="section">
+            <h2>Participant Confirmation</h2>
+            <div class="grid two">
+              <div>
+                <label for="participantName">Participant name (printed)</label>
+                <input id="participantName" name="participantName" type="text" required />
+              </div>
+              <div>
+                <label for="participantDate">Date</label>
+                <input id="participantDate" name="participantDate" type="date" required />
+              </div>
+            </div>
+            <div class="signature-pad" data-signature-pad="participantSignature">
+              <div class="signature-header">
+                <div>
+                  <h3>Participant signature or thumbprint</h3>
+                  <p>Draw in the box, or upload a PNG/JPG image of the signature or thumbprint.</p>
+                </div>
+                <button class="secondary no-print" type="button" data-clear-signature>Clear</button>
+              </div>
+              <canvas
+                class="signature-canvas"
+                aria-label="Draw participant signature or thumbprint"
+                width="900"
+                height="240"
+              ></canvas>
+              <div class="signature-upload no-print">
+                <label for="participantSignatureUpload">Upload participant signature or thumbprint</label>
+                <input
+                  id="participantSignatureUpload"
+                  data-upload-signature
+                  type="file"
+                  accept="image/png,image/jpeg"
+                />
+              </div>
+              <img class="signature-preview" alt="Participant signature or thumbprint preview" hidden />
+              <input type="hidden" name="participantSignatureData" data-signature-value required />
+            </div>
+          </section>
+
+          <section class="section">
+            <h2>Interpreter Confirmation</h2>
+            <div class="interpreter-statement">
+              <div class="statement-row first">
+                <span>I</span>
+                <input aria-label="Interpreter name" name="interpreterName" type="text" />
+                <span>of</span>
+                <input aria-label="Interpreter organization" name="interpreterOrganization" type="text" />
+                <span>have distinctly, clearly and audibly</span>
+              </div>
+              <div class="statement-row language">
+                <span>interpreted/read the above in the</span>
+                <input aria-label="Language or dialect" name="language" type="text" />
+                <span>
+                  language/dialect to the abovenamed person who seemed to clearly understand the
+                  above and who made his/her mark in my presence.
+                </span>
+              </div>
+            </div>
+            <div class="grid two">
+              <div>
+                <label for="interpreterDate">Date</label>
+                <input id="interpreterDate" name="interpreterDate" type="date" readonly />
+              </div>
+              <div>
+                <label for="interpreterSignatureName">Interpreter name for signature record</label>
+                <input id="interpreterSignatureName" name="interpreterSignatureName" type="text" />
+              </div>
+            </div>
+            <div class="signature-pad" data-signature-pad="interpreterSignature">
+              <div class="signature-header">
+                <div>
+                  <h3>Interpreter signature</h3>
+                  <p>Draw in the box, or upload a PNG/JPG image of the interpreter signature.</p>
+                </div>
+                <button class="secondary no-print" type="button" data-clear-signature>Clear</button>
+              </div>
+              <canvas
+                class="signature-canvas"
+                aria-label="Draw interpreter signature"
+                width="900"
+                height="240"
+              ></canvas>
+              <div class="signature-upload no-print">
+                <label for="interpreterSignatureUpload">Upload interpreter signature</label>
+                <input
+                  id="interpreterSignatureUpload"
+                  data-upload-signature
+                  type="file"
+                  accept="image/png,image/jpeg"
+                />
+              </div>
+              <img class="signature-preview" alt="Interpreter signature preview" hidden />
+              <input type="hidden" name="interpreterSignatureData" data-signature-value />
+            </div>
+          </section>
+
+          <section class="section no-print">
+            <div id="formMessage" class="form-message" role="status" aria-live="polite"></div>
+            <div class="footer-actions">
+              <button class="secondary" type="reset">Clear form</button>
+              <button class="primary" type="submit">Download completed form</button>
+            </div>
+          </section>
+        </form>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
