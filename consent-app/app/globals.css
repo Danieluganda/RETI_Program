@@ -229,6 +229,11 @@ button,
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.program-details {
+  display: grid;
+  gap: 16px;
+}
+
 .form-grid {
   display: grid;
   gap: 16px;

@@ -106,7 +106,20 @@ const partnerOptions = [
   "Connectivity service providers",
 ];
 
-const esoOptions = Array.from({ length: 12 }, (_, index) => `ESO ${index + 1}`);
+const esoOptions = [
+  "DFCU Foundation",
+  "ECHAI",
+  "PEDN",
+  "Stanbic Bank Incubator",
+  "Living Earth Uganda",
+  "AID",
+  "AGDI",
+  "Challenges Uganda",
+  "CURAD",
+  "Mkazipreneur",
+  "MUBS EIC",
+  "Finding XY",
+];
 
 type PartnerService = keyof typeof partnerServiceData;
 
@@ -229,7 +242,7 @@ export function ConsentForm({
           <p className="note">Please read this form carefully before you decide.</p>
         </section>
 
-        <section className="section grid two">
+        <section className="section program-details">
           <div>
             <label htmlFor="programName">Program name</label>
             <input id="programName" name="programName" defaultValue="10X: Enabling growth of MSMEs through the digital economy" required />
