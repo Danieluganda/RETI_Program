@@ -9,6 +9,10 @@ const blobConnectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
 const blobContainerName = process.env.AZURE_STORAGE_CONTAINER_NAME || "consent-files";
 const useBlobStorage = Boolean(blobConnectionString);
 
+export function hasBlobStorage() {
+  return useBlobStorage;
+}
+
 function safePart(value: string) {
   return value
     .toLowerCase()
@@ -85,6 +89,16 @@ export async function readPrivateFile(fileKey: string) {
   }
 
   return readFile(privateFilePath(fileKey));
+}
+
+export async function readTextBlob(fileKey: string) {
+  const blob = containerClient().getBlobClient(fileKey);
+  const data = await blob.downloadToBuffer();
+  return data.toString("utf8");
+}
+
+export async function writeTextBlob(fileKey: string, text: string) {
+  await uploadBuffer(fileKey, Buffer.from(text, "utf8"), "application/json");
 }
 
 export function fileUrl(fileKey: string) {

@@ -378,7 +378,7 @@ export async function generateConsentPdf(record: ConsentRecord) {
     );
     fieldGrid(ctx, [
       ["Date", record.consentDate],
-      ["Interpreter name for signature record", fieldValue(record.interpreterName, "")],
+      ["Interpreter name", fieldValue(record.interpreterName, "")],
     ]);
     drawImageBox(ctx, "Interpreter signature", interpreterImage, record.interpreterName);
   }

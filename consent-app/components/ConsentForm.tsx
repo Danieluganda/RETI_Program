@@ -469,7 +469,7 @@ export function ConsentForm({
                   <input id="interpreterDate" name="interpreterDate" type="date" defaultValue={today} readOnly />
                 </div>
                 <div>
-                  <label htmlFor="interpreterSignatureName">Interpreter name for signature record</label>
+                  <label htmlFor="interpreterSignatureName">Interpreter name</label>
                   <input id="interpreterSignatureName" name="interpreterSignatureName" />
                 </div>
               </div>

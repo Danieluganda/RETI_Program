@@ -1,6 +1,7 @@
 import { PrismaClient, type Consent } from "@prisma/client";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { hasBlobStorage, readTextBlob, writeTextBlob } from "./storage";
 
 export type ConsentRecord = {
   id: string;
@@ -43,6 +44,7 @@ export type ConsentRecord = {
 
 const dataDir = join(process.cwd(), "private");
 const dataFile = join(dataDir, "consents.json");
+const blobDataFile = "metadata/consents.json";
 const usePrisma = Boolean(process.env.DATABASE_URL?.startsWith("postgres"));
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
@@ -63,6 +65,20 @@ async function ensureDataFile() {
   } catch {
     await writeFile(dataFile, "[]\n", "utf8");
   }
+}
+
+async function readBlobConsents() {
+  try {
+    const file = await readTextBlob(blobDataFile);
+    return JSON.parse(file || "[]") as ConsentRecord[];
+  } catch {
+    await writeTextBlob(blobDataFile, "[]\n");
+    return [];
+  }
+}
+
+async function writeBlobConsents(records: ConsentRecord[]) {
+  await writeTextBlob(blobDataFile, `${JSON.stringify(records, null, 2)}\n`);
 }
 
 function toRecord(record: Consent): ConsentRecord {
@@ -110,6 +126,10 @@ export async function getConsents() {
   if (usePrisma) {
     const records = await prisma().consent.findMany({ orderBy: { createdAt: "desc" } });
     return records.map(toRecord);
+  }
+
+  if (hasBlobStorage()) {
+    return readBlobConsents();
   }
 
   await ensureDataFile();
@@ -164,11 +184,21 @@ export async function saveConsent(record: ConsentRecord) {
 
   const records = await getConsents();
   records.push(record);
+  if (hasBlobStorage()) {
+    await writeBlobConsents(records);
+    return record;
+  }
+
   await writeFile(dataFile, `${JSON.stringify(records, null, 2)}\n`, "utf8");
   return record;
 }
 
 export async function saveConsents(records: ConsentRecord[]) {
+  if (hasBlobStorage()) {
+    await writeBlobConsents(records);
+    return;
+  }
+
   await ensureDataFile();
   await writeFile(dataFile, `${JSON.stringify(records, null, 2)}\n`, "utf8");
 }
