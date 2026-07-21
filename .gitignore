@@ -8,11 +8,14 @@ dist/
 !.env.example
 
 *.log
+*.zip
+appservice-logs*/
 dev.out.log
 dev.err.log
 server.out.log
 server.err.log
 
+consent-app/deploy/
 consent-app/private/
 consent-app/private-consent-files/
 consent-app/generated-pdfs/*
