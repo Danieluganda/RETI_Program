@@ -9,9 +9,9 @@ const consentTemplates = {
     eyebrow: "10X Program",
     title: "Program Participants Consent Form",
     version: "10X-SAMPLE-v1",
-    defaultOrganization: "Mastercard Foundation",
+    defaultOrganization: "Outbox (U) Limited",
     intro:
-      "is committed to improving its programs and ensuring they have a positive impact on program participants. To achieve this, we collect and analyze data about program participants. We value your privacy and are committed to protecting your personal data. This consent form explains how we collect, use, and share your personal information as part of the 10X Program.",
+      "(\u201cwe,\u201d or \u201cus\u201d) is committed to improving its programs and ensuring they have a positive impact on program participants. To achieve this, we collect and analyze data about program participants. We value your privacy and are committed to protecting your personal data. This consent form explains how we collect, use, and share your personal information as part of the 10X Program.",
     purpose:
       "We collect your personal data to make analysis on the progress of the Program and improve the Program and learn from the data collected, including monitoring and evaluating the effectiveness of the 10X Program and to learn how to improve it for future participants.",
     dataList: [
@@ -27,12 +27,12 @@ const consentTemplates = {
     sharingList: [
       "Mastercard Foundation",
       "Third-party data processors hired by Mastercard Foundation to assist with monitoring and evaluation, for example data storage and analysis organizations.",
+      "For additional information on how Outbox processes personal data, contact us on zulu@outbox.africa or +256 (0) 392 000 152.",
     ],
     choiceText:
       "By consenting to share your data, you are helping for the success of the 10X Program for you and future participants.",
     agreementPrefix: "I agree to share my data with",
-    agreementSuffix:
-      "and Mastercard Foundation as well as any third-party data processors they may use for the purposes described above.",
+    agreementSuffix: "and Mastercard Foundation as well as any third-party data processors they may use for the purposes described above.",
   },
   "third-party-data-sharing": {
     eyebrow: "10X Program",
@@ -204,7 +204,6 @@ export function ConsentForm({
           )}
           <input type="hidden" name="consentFormType" value={consentFormType} />
           <input type="hidden" name="consentFormVersion" value={template.version} />
-          <p className="note">Consent form version: {template.version}</p>
         </section>
 
         <section className="section">
@@ -231,11 +230,16 @@ export function ConsentForm({
         <section className="section grid two">
           <div>
             <label htmlFor="programName">Program name</label>
-            <input id="programName" name="programName" defaultValue="10X Program" required />
+            <input id="programName" name="programName" defaultValue="10X: Enabling growth of MSMEs through the digital economy" required />
           </div>
           <div>
             <label htmlFor="dataCollectorOrganization">Data collector organization</label>
-            <input id="dataCollectorOrganization" name="dataCollectorOrganization" required />
+            <input
+              id="dataCollectorOrganization"
+              name="dataCollectorOrganization"
+              defaultValue="Outbox (U) Limited of 3rd Floor, Kalooli Lwanga Tower, Plot 83 & 85, Ntinda Road Kampala, Uganda"
+              required
+            />
           </div>
           <div>
             <label htmlFor="dataCollectorName">Data collector name</label>
@@ -243,7 +247,7 @@ export function ConsentForm({
           </div>
           <div>
             <label htmlFor="dataCollectorContact">Data collector contact information</label>
-            <input id="dataCollectorContact" name="dataCollectorContact" required />
+            <input id="dataCollectorContact" name="dataCollectorContact" defaultValue="+256 (0) 392 000 152; info@outbox.africa" required />
           </div>
         </section>
 
@@ -319,19 +323,11 @@ export function ConsentForm({
               <li key={item}>{item}</li>
             ))}
             <li>
-              For additional information on how
-              <input className="inline-input" aria-label="Organization processing personal data" name="privacyOrganization" />
-              processes personal data, please visit
-              <input className="inline-input wide" aria-label="Privacy policy URL" name="privacyPolicyUrl" type="url" />
-              to access a copy of its privacy policy.
-            </li>
-            <li>
-              The Foundation&apos;s privacy policy can be accessed via{" "}
-              <a href="https://mastercardfdn.org/privacy/" target="_blank" rel="noreferrer">
-                https://mastercardfdn.org/privacy/
-              </a>
+              For additional information on how Outbox processes personal data, contact us on zulu@outbox.africa or +256 (0) 392 000 152.
             </li>
           </ul>
+          <input type="hidden" name="privacyOrganization" value="Outbox (U) Limited" />
+          <input type="hidden" name="privacyPolicyUrl" value="zulu@outbox.africa; +256 (0) 392 000 152" />
         </section>
 
         <section className="section">
@@ -356,10 +352,10 @@ export function ConsentForm({
           <h2>5. Withdrawing Your Consent</h2>
           <p>
             You can withdraw your consent to share your data at any time. This will not affect your
-            ability to participate in the program. To withdraw your consent, please contact:
+            ability to participate in the program. To withdraw your consent, please send an email to
+            zulu@outbox.africa or call +256 (0) 392 000 152.
           </p>
-          <label htmlFor="withdrawalContact">Withdrawal contact</label>
-          <input id="withdrawalContact" name="withdrawalContact" required />
+          <input type="hidden" name="withdrawalContact" value="zulu@outbox.africa; +256 (0) 392 000 152" />
         </section>
 
         <section className="section">
@@ -373,7 +369,14 @@ export function ConsentForm({
               <input id="consentAgreement" name="consentAgreement" type="checkbox" required />
               <span>
                 {template.agreementPrefix}
-                <input className="inline-input" aria-label="Organization receiving shared data" name="dataSharingOrganization" required />
+                {isPartnerConsent ? (
+                  <input className="inline-input" aria-label="Organization receiving shared data" name="dataSharingOrganization" required />
+                ) : (
+                  <>
+                    <strong> Outbox </strong>
+                    <input type="hidden" name="dataSharingOrganization" value="Outbox" />
+                  </>
+                )}
                 {template.agreementSuffix}
               </span>
             </label>
@@ -402,7 +405,7 @@ export function ConsentForm({
           <h2>Participant Confirmation</h2>
           <div className="grid two">
             <div>
-              <label htmlFor="participantName">Participant name (printed)</label>
+              <label htmlFor="participantName">Participant name</label>
               <input id="participantName" name="participantName" required />
             </div>
             <div>

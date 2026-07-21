@@ -197,14 +197,13 @@ button,
 .eyebrow {
   margin: 0 0 4px;
   color: var(--accent-dark);
-  font-size: 0.78rem;
+  font-size: 1.65rem;
   font-weight: 700;
-  text-transform: uppercase;
 }
 
 .form-header h1 {
   margin: 0;
-  font-size: clamp(1.65rem, 2vw, 2.15rem);
+  font-size: clamp(1.05rem, 1.5vw, 1.35rem);
   line-height: 1.15;
 }
 

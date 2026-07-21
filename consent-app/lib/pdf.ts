@@ -32,7 +32,7 @@ function fieldValue(value: string | undefined, fallback = "N/A") {
 }
 
 function organizationFor(record: ConsentRecord) {
-  return fieldValue(record.implementingOrganization, isPartner(record) ? "10X Program" : "Mastercard Foundation");
+  return fieldValue(record.implementingOrganization, isPartner(record) ? "10X Program" : "Outbox (U) Limited");
 }
 
 function wrapText(text: string, font: PDFFont, size: number, width: number) {
@@ -239,6 +239,7 @@ function sharingParties(record: ConsentRecord) {
   return [
     "Mastercard Foundation",
     "Third-party data processors hired by Mastercard Foundation to assist with monitoring and evaluation, for example data storage and analysis organizations.",
+    "For additional information on how Outbox processes personal data, contact us on zulu@outbox.africa or +256 (0) 392 000 152.",
   ];
 }
 
@@ -247,7 +248,7 @@ function intro(record: ConsentRecord) {
     return `${organizationFor(record)} requests your consent to share selected personal and program participation data with approved third-party partners who may provide participant support services such as device financing, digital credit, asset financing, affordability checks, onboarding, verification, servicing, and related support. Please read this form carefully and sign to indicate your consent.`;
   }
 
-  return `${organizationFor(record)} is committed to improving its programs and ensuring they have a positive impact on program participants. To achieve this, we collect and analyze data about program participants. We value your privacy and are committed to protecting your personal data. This consent form explains how we collect, use, and share your personal information as part of the 10X Program. Please read this form carefully and sign to indicate your consent.`;
+  return `${organizationFor(record)} ("we," or "us") is committed to improving its programs and ensuring they have a positive impact on program participants. To achieve this, we collect and analyze data about program participants. We value your privacy and are committed to protecting your personal data. This consent form explains how we collect, use, and share your personal information as part of the 10X Program. Please read this form carefully and sign to indicate your consent.`;
 }
 
 function purpose(record: ConsentRecord) {
@@ -271,7 +272,7 @@ function agreementText(record: ConsentRecord) {
     return `I agree to share my data with ${fieldValue(record.dataSharingOrganization, "approved third-party partners")}, including device financiers, digital credit providers, asset financing partners, and their processors for the purposes described above.`;
   }
 
-  return `I agree to share my data with ${fieldValue(record.dataSharingOrganization)} and Mastercard Foundation as well as any third-party data processors they may use for the purposes described above.`;
+  return `I agree to share my data with ${fieldValue(record.dataSharingOrganization, "Outbox")} and Mastercard Foundation as well as any third-party data processors they may use for the purposes described above.`;
 }
 
 export async function generateConsentPdf(record: ConsentRecord) {
@@ -330,12 +331,6 @@ export async function generateConsentPdf(record: ConsentRecord) {
   section(ctx, "3. Who Will Your Data Be Shared With?");
   textBlock(ctx, "We may share your data with the following parties:", { size: 10 });
   bulletList(ctx, sharingParties(record));
-  textBlock(ctx, "For additional information on how the organization below processes personal data, please visit the privacy policy URL below to access a copy of its privacy policy.", { size: 9.5 });
-  fieldGrid(ctx, [
-    ["Organization processing personal data", fieldValue(record.privacyOrganization, "")],
-    ["Privacy policy URL", fieldValue(record.privacyPolicyUrl, "")],
-  ]);
-  textBlock(ctx, "The Foundation's privacy policy can be accessed via https://mastercardfdn.org/privacy/", { size: 9.5 });
 
   section(ctx, "4. Your Rights");
   textBlock(
@@ -353,8 +348,7 @@ export async function generateConsentPdf(record: ConsentRecord) {
   ]);
 
   section(ctx, "5. Withdrawing Your Consent");
-  textBlock(ctx, "You can withdraw your consent to share your data at any time. This will not affect your ability to participate in the program. To withdraw your consent, please contact:", { size: 10 });
-  fieldGrid(ctx, [["Withdrawal contact", record.withdrawalContact]]);
+  textBlock(ctx, "You can withdraw your consent to share your data at any time. This will not affect your ability to participate in the program. To withdraw your consent, please send an email to zulu@outbox.africa or call +256 (0) 392 000 152.", { size: 10 });
 
   section(ctx, "6. Understanding Your Choices");
   textBlock(ctx, choiceText(record), { size: 10 });
@@ -368,7 +362,7 @@ export async function generateConsentPdf(record: ConsentRecord) {
 
   section(ctx, "Participant Confirmation");
   fieldGrid(ctx, [
-    ["Participant name (printed)", record.participantName],
+    ["Participant name", record.participantName],
     ["Date", record.consentDate],
     ["Signing method", record.signingMethod],
     ["Collector's name", record.collectorName],
