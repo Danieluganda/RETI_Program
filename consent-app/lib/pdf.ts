@@ -135,6 +135,16 @@ function fieldGrid(ctx: PdfContext, rows: Array<[string, string]>) {
   }
 }
 
+function fieldStack(ctx: PdfContext, rows: Array<[string, string]>) {
+  for (const [label, value] of rows) {
+    const lines = wrapText(value || " ", ctx.font, 10, contentW).length;
+    const rowHeight = Math.max(40, 28 + lines * 14);
+    ensureSpace(ctx, rowHeight);
+    fieldLine(ctx, label, value, marginX, ctx.y, contentW);
+    ctx.y -= rowHeight;
+  }
+}
+
 function bulletList(ctx: PdfContext, items: string[]) {
   for (const item of items) textBlock(ctx, `- ${item}`, { size: 9.5, x: marginX + 10, width: contentW - 10 });
 }
@@ -310,9 +320,11 @@ export async function generateConsentPdf(record: ConsentRecord) {
   textBlock(ctx, "Please read this form carefully before you decide.", { size: 9.5, bold: true, color: rgb(0.36, 0.43, 0.48) });
 
   section(ctx, "Program and Collector Details");
-  fieldGrid(ctx, [
+  fieldStack(ctx, [
     ["Program name", record.programName],
     ["Data collector organization", record.dataCollectorOrganization],
+  ]);
+  fieldGrid(ctx, [
     ["Data collector name", record.collectorName],
     ["Data collector contact information", record.dataCollectorContact],
   ]);
