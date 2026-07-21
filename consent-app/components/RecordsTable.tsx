@@ -18,6 +18,7 @@ export function RecordsTable({ records }: { records: ConsentRecord[] }) {
           <th>Status</th>
           <th>Interpreter</th>
           <th>Date</th>
+          <th>Signed PDF</th>
           <th>View</th>
         </tr>
       </thead>
@@ -34,6 +35,15 @@ export function RecordsTable({ records }: { records: ConsentRecord[] }) {
             <td>{record.status || "locked"}</td>
             <td>{record.interpreterUsed ? record.interpreterName || "Yes" : "No"}</td>
             <td>{record.consentDate}</td>
+            <td>
+              {record.pdfFile ? (
+                <a href={record.pdfFile} target="_blank" rel="noreferrer">
+                  Open PDF
+                </a>
+              ) : (
+                <span className="muted-text">Pending</span>
+              )}
+            </td>
             <td>
               <Link href={`/consent/${record.id}`}>Open</Link>
             </td>

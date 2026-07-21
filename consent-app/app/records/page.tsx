@@ -17,7 +17,7 @@ export default async function RecordsPage() {
         </a>
       </header>
       <section className="panel">
-        <RecordsTable records={records.slice().reverse()} />
+        <RecordsTable records={records} />
       </section>
     </AppShell>
   );

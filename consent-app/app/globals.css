@@ -444,6 +444,10 @@ td {
   padding: 3px 8px;
 }
 
+.muted-text {
+  color: var(--muted);
+}
+
 .login-screen {
   min-height: 100vh;
   display: grid;

@@ -7,6 +7,7 @@ export default async function DashboardPage() {
   const records = await getConsents();
   const consented = records.filter((record) => record.consentDecision === "consented").length;
   const declined = records.filter((record) => record.consentDecision === "declined").length;
+  const signedPdfs = records.filter((record) => Boolean(record.pdfFile)).length;
 
   return (
     <AppShell>
@@ -33,13 +34,13 @@ export default async function DashboardPage() {
           <strong>{declined}</strong>
         </div>
         <div className="metric">
-          <span>Interpreter used</span>
-          <strong>{records.filter((record) => record.interpreterUsed).length}</strong>
+          <span>Signed PDFs</span>
+          <strong>{signedPdfs}</strong>
         </div>
       </section>
       <section className="panel">
         <h2>Recent records</h2>
-        <RecordsTable records={records.slice(-5).reverse()} />
+        <RecordsTable records={records.slice(0, 5)} />
       </section>
     </AppShell>
   );

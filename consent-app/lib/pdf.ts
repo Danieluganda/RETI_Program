@@ -101,14 +101,22 @@ function section(ctx: PdfContext, title: string) {
 }
 
 function fieldLine(ctx: PdfContext, label: string, value: string, x: number, y: number, width: number) {
+  const size = 10;
+  const lineGap = 4;
+  const valueLines = wrapText(value || " ", ctx.font, size, width);
   ctx.page.drawText(label, { x, y, size: 8.5, font: ctx.bold, color: rgb(0.18, 0.25, 0.3) });
-  ctx.page.drawText(value || " ", { x, y: y - 18, size: 10, font: ctx.font, color: rgb(0.08, 0.11, 0.14) });
+  let valueY = y - 18;
+  for (const line of valueLines) {
+    ctx.page.drawText(line, { x, y: valueY, size, font: ctx.font, color: rgb(0.08, 0.11, 0.14) });
+    valueY -= size + lineGap;
+  }
   ctx.page.drawLine({
-    start: { x, y: y - 22 },
-    end: { x: x + width, y: y - 22 },
+    start: { x, y: valueY + lineGap - 2 },
+    end: { x: x + width, y: valueY + lineGap - 2 },
     thickness: 0.7,
     color: rgb(0.38, 0.45, 0.49),
   });
+  return 22 + valueLines.length * (size + lineGap);
 }
 
 function fieldGrid(ctx: PdfContext, rows: Array<[string, string]>) {
@@ -116,11 +124,14 @@ function fieldGrid(ctx: PdfContext, rows: Array<[string, string]>) {
   const colW = (contentW - gap) / 2;
 
   for (let i = 0; i < rows.length; i += 2) {
-    ensureSpace(ctx, 46);
+    const leftLines = wrapText(rows[i][1] || " ", ctx.font, 10, colW).length;
+    const rightLines = rows[i + 1] ? wrapText(rows[i + 1][1] || " ", ctx.font, 10, colW).length : 1;
+    const rowHeight = Math.max(46, 28 + Math.max(leftLines, rightLines) * 14);
+    ensureSpace(ctx, rowHeight);
     const y = ctx.y;
     fieldLine(ctx, rows[i][0], rows[i][1], marginX, y, colW);
     if (rows[i + 1]) fieldLine(ctx, rows[i + 1][0], rows[i + 1][1], marginX + colW + gap, y, colW);
-    ctx.y -= 46;
+    ctx.y -= rowHeight;
   }
 }
 
@@ -280,6 +291,9 @@ export async function generateConsentPdf(record: ConsentRecord) {
   const folderKey = referenceParts.length === 4 ? referenceParts.join("/") : consentFolderKey(record.referenceNumber);
 
   const pdfDoc = await PDFDocument.create();
+  pdfDoc.setTitle(`${titleFor(record)} - ${record.referenceNumber}`);
+  pdfDoc.setSubject(`Consent reference ${record.referenceNumber}; status ${record.status}; version ${record.consentFormVersion}`);
+  pdfDoc.setKeywords(["10X Program", record.referenceNumber, record.consentFormVersion, record.status]);
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const signFont = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
@@ -289,10 +303,6 @@ export async function generateConsentPdf(record: ConsentRecord) {
 
   textBlock(ctx, "10X Program", { size: 26, bold: true, color: rgb(0.04, 0.31, 0.29), lineGap: 6 });
   textBlock(ctx, titleFor(record), { size: 12, bold: true, lineGap: 5 });
-  textBlock(ctx, `Reference: ${record.referenceNumber} | Version: ${record.consentFormVersion} | Status: ${record.status}`, {
-    size: 9,
-    color: rgb(0.36, 0.43, 0.48),
-  });
   ctx.y -= 8;
 
   section(ctx, "Consent Form");
@@ -382,14 +392,6 @@ export async function generateConsentPdf(record: ConsentRecord) {
     ]);
     drawImageBox(ctx, "Interpreter signature", interpreterImage, record.interpreterName);
   }
-
-  section(ctx, "Locked Record Metadata");
-  fieldGrid(ctx, [
-    ["Consent date and time", record.createdAt],
-    ["PDF generated at", generatedAt],
-    ["Unique consent reference number", record.referenceNumber],
-    ["Consent form version", record.consentFormVersion],
-  ]);
 
   const pdfBytes = await pdfDoc.save();
   const pdfKey = await savePdfFile(folderKey, pdfBytes);
