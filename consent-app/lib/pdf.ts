@@ -330,7 +330,11 @@ export async function generateConsentPdf(record: ConsentRecord) {
   section(ctx, "3. Who Will Your Data Be Shared With?");
   textBlock(ctx, "We may share your data with the following parties:", { size: 10 });
   bulletList(ctx, sharingParties(record));
-  textBlock(ctx, `For additional information on how ${fieldValue(record.privacyOrganization)} processes personal data, please visit ${fieldValue(record.privacyPolicyUrl)} to access a copy of its privacy policy.`, { size: 9.5 });
+  textBlock(ctx, "For additional information on how the organization below processes personal data, please visit the privacy policy URL below to access a copy of its privacy policy.", { size: 9.5 });
+  fieldGrid(ctx, [
+    ["Organization processing personal data", fieldValue(record.privacyOrganization, "")],
+    ["Privacy policy URL", fieldValue(record.privacyPolicyUrl, "")],
+  ]);
   textBlock(ctx, "The Foundation's privacy policy can be accessed via https://mastercardfdn.org/privacy/", { size: 9.5 });
 
   section(ctx, "4. Your Rights");
