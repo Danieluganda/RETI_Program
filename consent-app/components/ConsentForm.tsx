@@ -126,6 +126,7 @@ export function ConsentForm({
   const [consentFormType, setConsentFormType] = useState<ConsentFormType>(initialFormType);
   const [serviceRequired, setServiceRequired] = useState<PartnerService>("device-financing");
   const [authorizedPartners, setAuthorizedPartners] = useState<string[]>([partnerOptions[0]]);
+  const [interpreterUsed, setInterpreterUsed] = useState(false);
   const template = consentTemplates[consentFormType];
   const isPartnerConsent = consentFormType === "third-party-data-sharing";
   const dataShared = isPartnerConsent ? partnerServiceData[serviceRequired] : template.dataList;
@@ -152,7 +153,7 @@ export function ConsentForm({
         authorizedPartners: isPartnerConsent ? selectedPartners : [],
         dataShared: isPartnerConsent ? selectedData : dataShared,
         informationUnderstood: Boolean(body.consentAgreement),
-        interpreterUsed: Boolean(body.interpreterName || body.language || interpreterSignature),
+        interpreterUsed,
         interpreterLanguage: body.language,
         interpreterName: body.interpreterName || body.interpreterSignatureName,
         signingMethod,
@@ -423,40 +424,58 @@ export function ConsentForm({
 
         <section className="section">
           <h2>Interpreter Confirmation</h2>
-          <div className="interpreter-statement">
-            <div className="statement-row first">
-              <span>I</span>
-              <input aria-label="Interpreter name" name="interpreterName" />
-              <span>of</span>
-              <input aria-label="Interpreter organization" name="interpreterOrganization" />
-              <span>have distinctly, clearly and audibly</span>
-            </div>
-            <div className="statement-row language">
-              <span>interpreted/read the above in the</span>
-              <input aria-label="Language or dialect" name="language" />
-              <span>
-                language/dialect to the abovenamed person who seemed to clearly understand the
-                above and who made his/her mark in my presence.
-              </span>
-            </div>
+          <div className="decision-options interpreter-choice">
+            <label className="checkbox-row compact">
+              <input
+                name="interpreterUsedChoice"
+                type="radio"
+                checked={!interpreterUsed}
+                onChange={() => {
+                  setInterpreterUsed(false);
+                  setInterpreterSignature("");
+                }}
+              />
+              <span>No interpreter was used.</span>
+            </label>
+            <label className="checkbox-row compact">
+              <input
+                name="interpreterUsedChoice"
+                type="radio"
+                checked={interpreterUsed}
+                onChange={() => setInterpreterUsed(true)}
+              />
+              <span>Yes, an interpreter read or explained this form.</span>
+            </label>
           </div>
-          <div className="grid two">
-            <div>
-              <label htmlFor="interpreterDate">Date</label>
-              <input id="interpreterDate" name="interpreterDate" type="date" defaultValue={today} readOnly />
-            </div>
-            <div>
-              <label htmlFor="interpreterSignatureName">Interpreter name for signature record</label>
-              <input id="interpreterSignatureName" name="interpreterSignatureName" />
-            </div>
-          </div>
-          <div className="signature-pad">
-            <SignaturePad
-              label="Interpreter signature"
-              valueName="interpreterSignatureData"
-              onChange={(dataUrl) => setInterpreterSignature(dataUrl)}
-            />
-          </div>
+
+          {interpreterUsed && (
+            <>
+              <p className="interpreter-statement">
+                I <input aria-label="Interpreter name" name="interpreterName" required /> of{" "}
+                <input aria-label="Interpreter organization" name="interpreterOrganization" required /> have distinctly,
+                clearly and audibly interpreted/read the above in the{" "}
+                <input aria-label="Language or dialect" name="language" required /> language/dialect to the abovenamed
+                person who seemed to clearly understand the above and who made his/her mark in my presence.
+              </p>
+              <div className="grid two">
+                <div>
+                  <label htmlFor="interpreterDate">Date</label>
+                  <input id="interpreterDate" name="interpreterDate" type="date" defaultValue={today} readOnly />
+                </div>
+                <div>
+                  <label htmlFor="interpreterSignatureName">Interpreter name for signature record</label>
+                  <input id="interpreterSignatureName" name="interpreterSignatureName" />
+                </div>
+              </div>
+              <div className="signature-pad">
+                <SignaturePad
+                  label="Interpreter signature"
+                  valueName="interpreterSignatureData"
+                  onChange={(dataUrl) => setInterpreterSignature(dataUrl)}
+                />
+              </div>
+            </>
+          )}
         </section>
 
         <section className="section">

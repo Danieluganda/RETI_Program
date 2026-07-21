@@ -375,17 +375,19 @@ export async function generateConsentPdf(record: ConsentRecord) {
   ]);
   drawImageBox(ctx, "Participant signature or thumbprint", participantImage, record.participantName);
 
-  section(ctx, "Interpreter Confirmation");
-  textBlock(
-    ctx,
-    `I ${fieldValue(record.interpreterName, "N/A")} of ${fieldValue(record.interpreterOrganization, "N/A")} have distinctly, clearly and audibly interpreted/read the above in the ${fieldValue(record.interpreterLanguage, "N/A")} language/dialect to the abovenamed person who seemed to clearly understand the above and who made his/her mark in my presence.`,
-    { size: 10 },
-  );
-  fieldGrid(ctx, [
-    ["Date", record.consentDate],
-    ["Interpreter name for signature record", fieldValue(record.interpreterName, "")],
-  ]);
-  drawImageBox(ctx, "Interpreter signature", interpreterImage, record.interpreterName);
+  if (record.interpreterUsed) {
+    section(ctx, "Interpreter Confirmation");
+    textBlock(
+      ctx,
+      `I ${fieldValue(record.interpreterName, "N/A")} of ${fieldValue(record.interpreterOrganization, "N/A")} have distinctly, clearly and audibly interpreted/read the above in the ${fieldValue(record.interpreterLanguage, "N/A")} language/dialect to the abovenamed person who seemed to clearly understand the above and who made his/her mark in my presence.`,
+      { size: 10 },
+    );
+    fieldGrid(ctx, [
+      ["Date", record.consentDate],
+      ["Interpreter name for signature record", fieldValue(record.interpreterName, "")],
+    ]);
+    drawImageBox(ctx, "Interpreter signature", interpreterImage, record.interpreterName);
+  }
 
   section(ctx, "Locked Record Metadata");
   fieldGrid(ctx, [
