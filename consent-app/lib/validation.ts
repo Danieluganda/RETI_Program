@@ -11,6 +11,7 @@ export type ConsentPayload = {
   participantName?: string;
   participantPhone?: string;
   programName?: string;
+  esoName?: string;
   consentDecision?: "consented" | "declined";
   serviceRequired?: string;
   authorizedPartners?: string[];

@@ -32,6 +32,7 @@ export async function POST(request: Request) {
     participantName: body.participantName?.trim() || "",
     participantPhone: body.participantPhone || "",
     programName: body.programName || "10X: Enabling growth of MSMEs through the digital economy",
+    esoName: body.esoName || "",
     consentFormType: body.consentFormType || "sample-space",
     implementingOrganization: body.implementingOrganization || "Outbox (U) Limited",
     dataCollectorOrganization:

@@ -106,6 +106,8 @@ const partnerOptions = [
   "Connectivity service providers",
 ];
 
+const esoOptions = Array.from({ length: 12 }, (_, index) => `ESO ${index + 1}`);
+
 type PartnerService = keyof typeof partnerServiceData;
 
 export function ConsentForm({
@@ -231,6 +233,19 @@ export function ConsentForm({
           <div>
             <label htmlFor="programName">Program name</label>
             <input id="programName" name="programName" defaultValue="10X: Enabling growth of MSMEs through the digital economy" required />
+          </div>
+          <div>
+            <label htmlFor="esoName">ESO</label>
+            <select id="esoName" name="esoName" required defaultValue="">
+              <option value="" disabled>
+                Select ESO
+              </option>
+              {esoOptions.map((eso) => (
+                <option key={eso} value={eso}>
+                  {eso}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label htmlFor="dataCollectorOrganization">Data collector organization</label>

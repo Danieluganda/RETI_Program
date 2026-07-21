@@ -11,6 +11,7 @@ export async function GET() {
     "participantName",
     "participantPhone",
     "programName",
+    "esoName",
     "consentFormType",
     "consentFormVersion",
     "consentDecision",

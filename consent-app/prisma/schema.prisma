@@ -23,6 +23,7 @@ model Consent {
   participantName          String
   participantPhone         String?
   programName              String   @default("10X: Enabling growth of MSMEs through the digital economy")
+  esoName                  String?
   consentFormType          String   @default("sample-space")
   implementingOrganization String?
   dataCollectorOrganization String?
