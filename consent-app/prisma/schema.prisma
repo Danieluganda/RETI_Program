@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -22,12 +22,19 @@ model Consent {
   referenceNumber          String   @unique
   participantName          String
   participantPhone         String?
-  programName              String   @default("10X Program")
+  programName              String   @default("10X: Enabling growth of MSMEs through the digital economy")
   consentFormType          String   @default("sample-space")
+  implementingOrganization String?
+  dataCollectorOrganization String?
+  dataCollectorContact     String?
+  privacyOrganization      String?
+  privacyPolicyUrl         String?
+  withdrawalContact        String?
+  dataSharingOrganization  String?
   consentDecision          String
   serviceRequired          String?
-  authorizedPartners       String?
-  dataShared               String?
+  authorizedPartners       String[] @default([])
+  dataShared               String[] @default([])
   informationUnderstood    Boolean  @default(false)
   signingMethod            String
   signatureFile            String
@@ -38,6 +45,7 @@ model Consent {
   interpreterLanguage      String?
   interpreterSignatureFile String?
   interpreterSignatureFileKey String?
+  collectorName            String?
   collectorId              String?
   collector                User?    @relation(fields: [collectorId], references: [id])
   consentDate              DateTime

@@ -1,8 +1,7 @@
-import { readFile, mkdir, writeFile } from "node:fs/promises";
-import { basename, dirname, join } from "node:path";
+import { basename } from "node:path";
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import type { ConsentRecord } from "./db";
-import { generatedPdfPath, privateFilePath, privateFileRoot } from "./storage";
+import { consentFolderKey, readPrivateFile, savePdfFile } from "./storage";
 
 const pageSize: [number, number] = [595.28, 841.89];
 const marginX = 52;
@@ -150,7 +149,7 @@ function checkbox(ctx: PdfContext, checked: boolean, text: string) {
 async function embedImage(ctx: PdfContext, fileKey: string) {
   if (!fileKey) return null;
   try {
-    const bytes = await readFile(privateFilePath(fileKey));
+    const bytes = await readPrivateFile(fileKey);
     const lower = basename(fileKey).toLowerCase();
     return lower.endsWith(".jpg") || lower.endsWith(".jpeg") ? ctx.pdfDoc.embedJpg(bytes) : ctx.pdfDoc.embedPng(bytes);
   } catch {
@@ -278,13 +277,7 @@ function agreementText(record: ConsentRecord) {
 export async function generateConsentPdf(record: ConsentRecord) {
   const generatedAt = new Date().toISOString();
   const referenceParts = record.signatureFileKey.split("/").slice(0, 4);
-  const now = new Date();
-  const folderKey =
-    referenceParts.length === 4
-      ? referenceParts.join("/")
-      : `10x/${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}/${record.referenceNumber}`;
-  const folderPath = join(privateFileRoot, folderKey);
-  await mkdir(folderPath, { recursive: true });
+  const folderKey = referenceParts.length === 4 ? referenceParts.join("/") : consentFolderKey(record.referenceNumber);
 
   const pdfDoc = await PDFDocument.create();
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -391,12 +384,8 @@ export async function generateConsentPdf(record: ConsentRecord) {
     ["Consent form version", record.consentFormVersion],
   ]);
 
-  const pdfKey = `${folderKey}/consent-form.pdf`;
   const pdfBytes = await pdfDoc.save();
-  const archivePath = generatedPdfPath(pdfKey);
-  await mkdir(dirname(archivePath), { recursive: true });
-  await writeFile(join(folderPath, "consent-form.pdf"), pdfBytes);
-  await writeFile(archivePath, pdfBytes);
+  const pdfKey = await savePdfFile(folderKey, pdfBytes);
 
   return { pdfFileKey: pdfKey, pdfFile: `/api/uploads?key=${encodeURIComponent(pdfKey)}`, pdfGeneratedAt: generatedAt };
 }

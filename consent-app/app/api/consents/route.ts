@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { getConsents, nextReference, saveConsents, type ConsentRecord } from "@/lib/db";
+import { getConsents, nextReference, saveConsent, type ConsentRecord } from "@/lib/db";
 import { generateConsentPdf } from "@/lib/pdf";
 import { fileUrl, saveDataImage } from "@/lib/storage";
 import { validateConsentPayload, type ConsentPayload } from "@/lib/validation";
@@ -17,8 +17,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: errors.join(" ") }, { status: 422 });
   }
 
-  const records = await getConsents();
-  const referenceNumber = nextReference(records);
+  const referenceNumber = await nextReference();
   const signatureFileKey = await saveDataImage(referenceNumber, "participant-signature", body.participantSignatureData);
   const interpreterSignatureFileKey = await saveDataImage(
     referenceNumber,
@@ -73,8 +72,7 @@ export async function POST(request: Request) {
   record.pdfFileKey = pdf.pdfFileKey;
   record.pdfGeneratedAt = pdf.pdfGeneratedAt;
 
-  records.push(record);
-  await saveConsents(records);
+  const savedRecord = await saveConsent(record);
 
-  return NextResponse.json(record, { status: 201 });
+  return NextResponse.json(savedRecord, { status: 201 });
 }
