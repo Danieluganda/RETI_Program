@@ -25,9 +25,9 @@ const consentTemplates = {
       "Feedback and responses to surveys",
     ],
     sharingList: [
-      "Mastercard Foundation",
-      "Third-party data processors hired by Mastercard Foundation to assist with monitoring and evaluation, for example data storage and analysis organizations.",
-      "For additional information on how Outbox processes personal data, contact us on zulu@outbox.africa or +256 (0) 392 000 152.",
+      "Mastercard Foundation.",
+      "Third-party data processors hired by Mastercard Foundation to support monitoring and evaluation, including data storage and analysis.",
+      "Organizations contracted by Outbox, or those that have a Data Sharing Agreement (DSA) with Outbox, to support programme implementation, monitoring and evaluation, including securely storing, analyzing and reporting on programme data.",
     ],
     choiceText:
       "By consenting to share your data, you are helping for the success of the 10X Program for you and future participants.",
@@ -317,15 +317,18 @@ export function ConsentForm({
 
         <section className="section">
           <h2>3. Who Will Your Data Be Shared With?</h2>
-          <p>We may share your data with the following parties:</p>
+          <p>We may share your personal data with:</p>
           <ul className="check-list">
             {template.sharingList.map((item) => (
               <li key={item}>{item}</li>
             ))}
-            <li>
-              For additional information on how Outbox processes personal data, contact us on zulu@outbox.africa or +256 (0) 392 000 152.
-            </li>
           </ul>
+          {!isPartnerConsent && (
+            <p>
+              For additional information on how Outbox processes personal data, contact us at{" "}
+              <a href="mailto:zulu@outbox.africa">zulu@outbox.africa</a> or +256 (0) 392 000 152.
+            </p>
+          )}
           <input type="hidden" name="privacyOrganization" value="Outbox (U) Limited" />
           <input type="hidden" name="privacyPolicyUrl" value="zulu@outbox.africa; +256 (0) 392 000 152" />
         </section>

@@ -236,9 +236,9 @@ function sharingParties(record: ConsentRecord) {
   }
 
   return [
-    "Mastercard Foundation",
-    "Third-party data processors hired by Mastercard Foundation to assist with monitoring and evaluation, for example data storage and analysis organizations.",
-    "For additional information on how Outbox processes personal data, contact us on zulu@outbox.africa or +256 (0) 392 000 152.",
+    "Mastercard Foundation.",
+    "Third-party data processors hired by Mastercard Foundation to support monitoring and evaluation, including data storage and analysis.",
+    "Organizations contracted by Outbox, or those that have a Data Sharing Agreement (DSA) with Outbox, to support programme implementation, monitoring and evaluation, including securely storing, analyzing and reporting on programme data.",
   ];
 }
 
@@ -322,8 +322,15 @@ export async function generateConsentPdf(record: ConsentRecord) {
   bulletList(ctx, dataCollected(record));
 
   section(ctx, "3. Who Will Your Data Be Shared With?");
-  textBlock(ctx, "We may share your data with the following parties:", { size: 10 });
+  textBlock(ctx, "We may share your personal data with:", { size: 10 });
   bulletList(ctx, sharingParties(record));
+  if (!isPartner(record)) {
+    textBlock(
+      ctx,
+      "For additional information on how Outbox processes personal data, contact us at zulu@outbox.africa or +256 (0) 392 000 152.",
+      { size: 10 },
+    );
+  }
 
   section(ctx, "4. Your Rights");
   textBlock(

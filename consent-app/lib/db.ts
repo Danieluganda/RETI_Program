@@ -46,9 +46,14 @@ const dataFile = join(dataDir, "consents.json");
 const usePrisma = Boolean(process.env.DATABASE_URL?.startsWith("postgres"));
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
-export const prisma = globalForPrisma.prisma ?? new PrismaClient();
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+function prisma() {
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = new PrismaClient();
+  }
+
+  return globalForPrisma.prisma;
+}
 
 async function ensureDataFile() {
   await mkdir(dataDir, { recursive: true });
@@ -103,7 +108,7 @@ function toRecord(record: Consent): ConsentRecord {
 
 export async function getConsents() {
   if (usePrisma) {
-    const records = await prisma.consent.findMany({ orderBy: { createdAt: "desc" } });
+    const records = await prisma().consent.findMany({ orderBy: { createdAt: "desc" } });
     return records.map(toRecord);
   }
 
@@ -114,7 +119,7 @@ export async function getConsents() {
 
 export async function saveConsent(record: ConsentRecord) {
   if (usePrisma) {
-    const saved = await prisma.consent.create({
+    const saved = await prisma().consent.create({
       data: {
         id: record.id,
         referenceNumber: record.referenceNumber,
@@ -172,7 +177,7 @@ export async function nextReference() {
   const year = new Date().getFullYear();
 
   if (usePrisma) {
-    const count = await prisma.consent.count({
+    const count = await prisma().consent.count({
       where: {
         referenceNumber: {
           startsWith: `CNS-${year}-`,
@@ -188,7 +193,7 @@ export async function nextReference() {
 
 export async function getConsentById(id: string) {
   if (usePrisma) {
-    const record = await prisma.consent.findFirst({
+    const record = await prisma().consent.findFirst({
       where: {
         OR: [{ id }, { referenceNumber: id }],
       },

@@ -487,6 +487,45 @@ td {
   color: var(--muted);
 }
 
+.submission-summary {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.submission-summary dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.submission-summary dl > div {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 16px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+
+.submission-summary dt {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.submission-summary dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.submission-actions,
+.thank-you-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
 @media (max-width: 900px) {
   .shell,
   .cards,

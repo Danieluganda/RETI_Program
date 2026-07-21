@@ -58,11 +58,13 @@ export default async function ConsentDetailPage({ params }: { params: Promise<{ 
         <p>
           <strong>PDF generated at:</strong> {record.pdfGeneratedAt}
         </p>
-        <p>
-          <a href={record.signatureFile} target="_blank" rel="noreferrer">
-            View participant signature/thumbprint
-          </a>
-        </p>
+        {record.signatureFile && (
+          <p>
+            <a href={record.signatureFile} target="_blank" rel="noreferrer">
+              View participant signature/thumbprint
+            </a>
+          </p>
+        )}
         {record.interpreterSignatureFile && (
           <p>
             <a href={record.interpreterSignatureFile} target="_blank" rel="noreferrer">

@@ -17,8 +17,12 @@ export function ConsentText() {
         <li>Feedback and responses to surveys</li>
       </ul>
       <p>
-        Your data may be shared with Mastercard Foundation and third-party data processors hired
-        to assist with monitoring and evaluation. You may withdraw consent at any time.
+        Your personal data may be shared with Mastercard Foundation, third-party data processors
+        hired by Mastercard Foundation to support monitoring and evaluation, including data storage
+        and analysis, and organizations contracted by Outbox, or those that have a Data Sharing
+        Agreement (DSA) with Outbox, to support programme implementation, monitoring and evaluation,
+        including securely storing, analyzing and reporting on programme data. For additional
+        information, contact zulu@outbox.africa or +256 (0) 392 000 152.
       </p>
     </div>
   );
