@@ -403,6 +403,17 @@ input[type="file"] {
   gap: 12px;
 }
 
+.export-panel {
+  margin-bottom: 18px;
+}
+
+.export-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(160px, 220px)) auto;
+  align-items: end;
+  gap: 12px;
+}
+
 .toolbar {
   align-items: flex-start;
   margin-bottom: 10px;
