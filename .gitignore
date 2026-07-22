@@ -18,6 +18,7 @@ server.err.log
 consent-app/deploy/
 consent-app/private/
 consent-app/private-consent-files/
+consent-app/_src_data/
 consent-app/generated-pdfs/*
 !consent-app/generated-pdfs/.gitkeep
 

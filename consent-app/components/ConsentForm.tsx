@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SignaturePad } from "./SignaturePad";
 
@@ -123,6 +123,18 @@ const esoOptions = [
 
 type PartnerService = keyof typeof partnerServiceData;
 
+type ParticipantOption = {
+  id: string;
+  externalId: string;
+  fullName: string;
+  phone: string;
+  email: string;
+  esoName: string;
+  district: string;
+  region: string;
+  sector: string;
+};
+
 export function ConsentForm({
   initialFormType = "sample-space",
   lockFormType = false,
@@ -142,9 +154,42 @@ export function ConsentForm({
   const [serviceRequired, setServiceRequired] = useState<PartnerService>("device-financing");
   const [authorizedPartners, setAuthorizedPartners] = useState<string[]>([partnerOptions[0]]);
   const [interpreterUsed, setInterpreterUsed] = useState(false);
+  const [selectedEso, setSelectedEso] = useState("");
+  const [participants, setParticipants] = useState<ParticipantOption[]>([]);
+  const [selectedParticipantId, setSelectedParticipantId] = useState("");
+  const [participantsLoading, setParticipantsLoading] = useState(false);
   const template = consentTemplates[consentFormType];
   const isPartnerConsent = consentFormType === "third-party-data-sharing";
   const dataShared = isPartnerConsent ? partnerServiceData[serviceRequired] : template.dataList;
+  const selectedParticipant = participants.find((participant) => participant.id === selectedParticipantId);
+
+  useEffect(() => {
+    if (!selectedEso) {
+      setParticipants([]);
+      setSelectedParticipantId("");
+      return;
+    }
+
+    let active = true;
+    setParticipantsLoading(true);
+    setSelectedParticipantId("");
+
+    fetch(`/api/participants?eso=${encodeURIComponent(selectedEso)}`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (active) setParticipants(data.participants || []);
+      })
+      .catch(() => {
+        if (active) setParticipants([]);
+      })
+      .finally(() => {
+        if (active) setParticipantsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [selectedEso]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -159,8 +204,9 @@ export function ConsentForm({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...body,
-        participantName: body.participantName,
-        participantPhone: "",
+        participantName: selectedParticipant?.fullName || body.participantName,
+        participantPhone: selectedParticipant?.phone || "",
+        participantExternalId: selectedParticipant?.externalId || "",
         consentFormType,
         consentFormVersion: template.version,
         consentDecision: body.consentDecision || "consented",
@@ -264,7 +310,13 @@ export function ConsentForm({
           </div>
           <div>
             <label htmlFor="esoName">Entrepreneur Support Organization (ESO)</label>
-            <select id="esoName" name="esoName" required defaultValue="">
+            <select
+              id="esoName"
+              name="esoName"
+              required
+              value={selectedEso}
+              onChange={(event) => setSelectedEso(event.target.value)}
+            >
               <option value="" disabled>
                 Select Entrepreneur Support Organization
               </option>
@@ -274,6 +326,33 @@ export function ConsentForm({
                 </option>
               ))}
             </select>
+          </div>
+          <div>
+            <label htmlFor="participantSelect">Participant</label>
+            <select
+              id="participantSelect"
+              required
+              value={selectedParticipantId}
+              onChange={(event) => setSelectedParticipantId(event.target.value)}
+              disabled={!selectedEso || participantsLoading}
+            >
+              <option value="">
+                {participantsLoading
+                  ? "Loading participants..."
+                  : selectedEso
+                    ? "Select participant"
+                    : "Select ESO first"}
+              </option>
+              {participants.map((participant) => (
+                <option key={participant.id} value={participant.id}>
+                  {participant.fullName}
+                  {participant.phone ? ` - ${participant.phone}` : ""}
+                </option>
+              ))}
+            </select>
+            {selectedEso && !participantsLoading && participants.length === 0 && (
+              <p className="field-hint">No imported participants found for this ESO.</p>
+            )}
           </div>
           <div>
             <label htmlFor="dataCollectorContact">Data collector contact information</label>
@@ -439,7 +518,8 @@ export function ConsentForm({
           <div className="grid two">
             <div>
               <label htmlFor="participantName">Participant name</label>
-              <input id="participantName" name="participantName" required />
+              <input id="participantName" name="participantName" value={selectedParticipant?.fullName || ""} readOnly required />
+              <input type="hidden" name="participantExternalId" value={selectedParticipant?.externalId || ""} />
             </div>
             <div>
               <label htmlFor="participantDate">Date</label>

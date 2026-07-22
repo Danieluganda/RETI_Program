@@ -10,6 +10,7 @@ export type ConsentPayload = {
   dataSharingOrganization?: string;
   participantName?: string;
   participantPhone?: string;
+  participantExternalId?: string;
   programName?: string;
   esoName?: string;
   consentDecision?: "consented" | "declined";

@@ -8,6 +8,7 @@ export type ConsentRecord = {
   referenceNumber: string;
   participantName: string;
   participantPhone: string;
+  participantExternalId: string;
   programName: string;
   esoName: string;
   consentFormType: string;
@@ -88,6 +89,7 @@ function toRecord(record: Consent): ConsentRecord {
     referenceNumber: record.referenceNumber,
     participantName: record.participantName,
     participantPhone: record.participantPhone || "",
+    participantExternalId: record.participantExternalId || "",
     programName: record.programName,
     esoName: record.esoName || "",
     consentFormType: record.consentFormType,
@@ -147,6 +149,7 @@ export async function saveConsent(record: ConsentRecord) {
         referenceNumber: record.referenceNumber,
         participantName: record.participantName,
         participantPhone: record.participantPhone,
+        participantExternalId: record.participantExternalId,
         programName: record.programName,
         esoName: record.esoName,
         consentFormType: record.consentFormType,

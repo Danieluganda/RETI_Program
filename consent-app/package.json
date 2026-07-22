@@ -6,7 +6,8 @@
     "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "participants:import": "node scripts/import-participants.js"
   },
   "dependencies": {
     "@azure/storage-blob": "^12.33.0",

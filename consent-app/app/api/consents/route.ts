@@ -31,6 +31,7 @@ export async function POST(request: Request) {
     referenceNumber,
     participantName: body.participantName?.trim() || "",
     participantPhone: body.participantPhone || "",
+    participantExternalId: body.participantExternalId || "",
     programName: body.programName || "10X: Enabling growth of MSMEs through the digital economy",
     esoName: body.esoName || "",
     consentFormType: body.consentFormType || "sample-space",

@@ -22,6 +22,7 @@ model Consent {
   referenceNumber          String   @unique
   participantName          String
   participantPhone         String?
+  participantExternalId    String?
   programName              String   @default("10X: Enabling growth of MSMEs through the digital economy")
   esoName                  String?
   consentFormType          String   @default("sample-space")
@@ -56,4 +57,25 @@ model Consent {
   pdfGeneratedAt           DateTime?
   status                   String   @default("locked")
   createdAt                DateTime @default(now())
+}
+
+model Participant {
+  id             String   @id @default(cuid())
+  externalId     String?  @unique
+  fullName       String
+  normalizedName String
+  phone          String?
+  email          String?
+  esoName        String
+  esoCode        String?
+  district       String?
+  region         String?
+  sector         String?
+  status         String   @default("active")
+  source         String   @default("participant_csv")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([esoName])
+  @@index([normalizedName])
 }
