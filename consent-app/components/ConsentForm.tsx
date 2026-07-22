@@ -157,22 +157,41 @@ export function ConsentForm({
   const [selectedEso, setSelectedEso] = useState("");
   const [participants, setParticipants] = useState<ParticipantOption[]>([]);
   const [selectedParticipantId, setSelectedParticipantId] = useState("");
+  const [participantSearch, setParticipantSearch] = useState("");
+  const [participantSearchOpen, setParticipantSearchOpen] = useState(false);
   const [participantsLoading, setParticipantsLoading] = useState(false);
   const template = consentTemplates[consentFormType];
   const isPartnerConsent = consentFormType === "third-party-data-sharing";
   const dataShared = isPartnerConsent ? partnerServiceData[serviceRequired] : template.dataList;
   const selectedParticipant = participants.find((participant) => participant.id === selectedParticipantId);
+  const filteredParticipants = useMemo(() => {
+    const query = participantSearch.trim().toLowerCase();
+    const source = query
+      ? participants.filter((participant) =>
+          [participant.fullName, participant.phone, participant.externalId]
+            .join(" ")
+            .toLowerCase()
+            .includes(query),
+        )
+      : participants;
+
+    return source.slice(0, 12);
+  }, [participantSearch, participants]);
 
   useEffect(() => {
     if (!selectedEso) {
       setParticipants([]);
       setSelectedParticipantId("");
+      setParticipantSearch("");
+      setParticipantSearchOpen(false);
       return;
     }
 
     let active = true;
     setParticipantsLoading(true);
     setSelectedParticipantId("");
+    setParticipantSearch("");
+    setParticipantSearchOpen(false);
 
     fetch(`/api/participants?eso=${encodeURIComponent(selectedEso)}`)
       .then((response) => response.json())
@@ -489,28 +508,75 @@ export function ConsentForm({
         <section className="section">
           <h2>Participant Confirmation</h2>
           <div className="participant-picker">
-            <label htmlFor="participantSelect">Participant</label>
-            <select
-              id="participantSelect"
-              required
-              value={selectedParticipantId}
-              onChange={(event) => setSelectedParticipantId(event.target.value)}
-              disabled={!selectedEso || participantsLoading}
-            >
-              <option value="">
-                {participantsLoading
-                  ? "Loading participants..."
-                  : selectedEso
-                    ? "Select participant"
-                    : "Select ESO first"}
-              </option>
-              {participants.map((participant) => (
-                <option key={participant.id} value={participant.id}>
-                  {participant.fullName}
-                  {participant.phone ? ` - ${participant.phone}` : ""}
-                </option>
-              ))}
-            </select>
+            <label htmlFor="participantSearch">Participant</label>
+            {selectedParticipant ? (
+              <div className="selected-participant">
+                <span>
+                  {selectedParticipant.fullName}
+                  {selectedParticipant.phone ? ` - ${selectedParticipant.phone}` : ""}
+                </span>
+                <button
+                  className="secondary compact-button"
+                  type="button"
+                  onClick={() => {
+                    setSelectedParticipantId("");
+                    setParticipantSearch(selectedParticipant.fullName);
+                    setParticipantSearchOpen(true);
+                  }}
+                >
+                  Change
+                </button>
+              </div>
+            ) : (
+              <div className="participant-search">
+                <input
+                  id="participantSearch"
+                  type="search"
+                  autoComplete="off"
+                  placeholder={
+                    participantsLoading
+                      ? "Loading participants..."
+                      : selectedEso
+                        ? "Search participant by name, phone, or ID"
+                        : "Select ESO first"
+                  }
+                  value={participantSearch}
+                  onChange={(event) => {
+                    setParticipantSearch(event.target.value);
+                    setParticipantSearchOpen(true);
+                  }}
+                  onFocus={() => selectedEso && setParticipantSearchOpen(true)}
+                  disabled={!selectedEso || participantsLoading}
+                  required
+                />
+                {participantSearchOpen && selectedEso && !participantsLoading && participants.length > 0 && (
+                  <div className="participant-results" role="listbox">
+                    {filteredParticipants.length > 0 ? (
+                      filteredParticipants.map((participant) => (
+                        <button
+                          key={participant.id}
+                          type="button"
+                          role="option"
+                          className="participant-result"
+                          onClick={() => {
+                            setSelectedParticipantId(participant.id);
+                            setParticipantSearch("");
+                            setParticipantSearchOpen(false);
+                          }}
+                        >
+                          <span>{participant.fullName}</span>
+                          <small>
+                            {[participant.phone, participant.externalId].filter(Boolean).join(" | ")}
+                          </small>
+                        </button>
+                      ))
+                    ) : (
+                      <p className="participant-empty">No participant matches your search.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
             {selectedEso && !participantsLoading && participants.length === 0 && (
               <p className="field-hint">No imported participants found for this ESO.</p>
             )}
