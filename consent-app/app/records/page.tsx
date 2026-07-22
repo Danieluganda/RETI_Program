@@ -2,6 +2,8 @@ import { AppShell } from "@/components/AppShell";
 import { RecordsTable } from "@/components/RecordsTable";
 import { getConsents } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export default async function RecordsPage() {
   const records = await getConsents();
 

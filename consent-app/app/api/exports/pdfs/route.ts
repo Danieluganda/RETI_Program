@@ -2,6 +2,8 @@ import JSZip from "jszip";
 import { getConsents, type ConsentRecord } from "@/lib/db";
 import { readPrivateFile } from "@/lib/storage";
 
+export const dynamic = "force-dynamic";
+
 function csvCell(value: unknown) {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;
 }

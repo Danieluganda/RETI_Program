@@ -1,5 +1,7 @@
 import { getConsents } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 function cell(value: unknown) {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;
 }

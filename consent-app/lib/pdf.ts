@@ -322,11 +322,11 @@ export async function generateConsentPdf(record: ConsentRecord) {
   section(ctx, "Program and Collector Details");
   fieldStack(ctx, [
     ["Program name", record.programName],
-    ["ESO", fieldValue(record.esoName, "")],
     ["Data collector organization", record.dataCollectorOrganization],
+    ["Data collector name", record.collectorName],
+    ["Entrepreneur Support Organization (ESO)", fieldValue(record.esoName, "")],
   ]);
   fieldGrid(ctx, [
-    ["Data collector name", record.collectorName],
     ["Data collector contact information", record.dataCollectorContact],
   ]);
 

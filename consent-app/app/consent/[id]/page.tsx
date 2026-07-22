@@ -28,7 +28,7 @@ export default async function ConsentDetailPage({ params }: { params: Promise<{ 
           <strong>Program:</strong> {record.programName}
         </p>
         <p>
-          <strong>ESO:</strong> {record.esoName || "N/A"}
+          <strong>Entrepreneur Support Organization (ESO):</strong> {record.esoName || "N/A"}
         </p>
         <p>
           <strong>Date:</strong> {record.consentDate}

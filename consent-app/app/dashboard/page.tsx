@@ -3,6 +3,8 @@ import { AppShell } from "@/components/AppShell";
 import { RecordsTable } from "@/components/RecordsTable";
 import { getConsents } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
   const records = await getConsents();
   const consented = records.filter((record) => record.consentDecision === "consented").length;
@@ -18,6 +20,9 @@ export default async function DashboardPage() {
         </div>
         <Link className="button primary" href="/consent/new">
           New Consent
+        </Link>
+        <Link className="button secondary" href="/records">
+          Bulk export
         </Link>
       </header>
       <section className="cards">

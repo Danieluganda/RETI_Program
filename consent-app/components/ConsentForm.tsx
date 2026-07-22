@@ -185,7 +185,9 @@ export function ConsentForm({
       return;
     }
 
-    router.push(`/consent/thank-you?ref=${encodeURIComponent(data.referenceNumber)}`);
+    router.push(
+      `/consent/thank-you?ref=${encodeURIComponent(data.referenceNumber)}&type=${encodeURIComponent(consentFormType)}`,
+    );
   }
 
   return (
@@ -248,19 +250,6 @@ export function ConsentForm({
             <input id="programName" name="programName" defaultValue="10X: Enabling growth of MSMEs through the digital economy" required />
           </div>
           <div>
-            <label htmlFor="esoName">ESO</label>
-            <select id="esoName" name="esoName" required defaultValue="">
-              <option value="" disabled>
-                Select ESO
-              </option>
-              {esoOptions.map((eso) => (
-                <option key={eso} value={eso}>
-                  {eso}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
             <label htmlFor="dataCollectorOrganization">Data collector organization</label>
             <input
               id="dataCollectorOrganization"
@@ -272,6 +261,19 @@ export function ConsentForm({
           <div>
             <label htmlFor="dataCollectorName">Data collector name</label>
             <input id="dataCollectorName" name="dataCollectorName" />
+          </div>
+          <div>
+            <label htmlFor="esoName">Entrepreneur Support Organization (ESO)</label>
+            <select id="esoName" name="esoName" required defaultValue="">
+              <option value="" disabled>
+                Select Entrepreneur Support Organization
+              </option>
+              {esoOptions.map((eso) => (
+                <option key={eso} value={eso}>
+                  {eso}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label htmlFor="dataCollectorContact">Data collector contact information</label>
