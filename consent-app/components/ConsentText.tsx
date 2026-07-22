@@ -20,8 +20,8 @@ export function ConsentText() {
         Your personal data may be shared with Mastercard Foundation, third-party data processors
         hired by Mastercard Foundation to support monitoring and evaluation, including data storage
         and analysis, and organizations contracted by Outbox, or those that have a Data Sharing
-        Agreement (DSA) with Outbox, to support programme implementation, monitoring and evaluation,
-        including securely storing, analyzing and reporting on programme data. For additional
+        Agreement (DSA) with Outbox, to support program implementation, monitoring and evaluation,
+        including securely storing, analyzing and reporting on program data. For additional
         information, contact zulu@outbox.africa or +256 (0) 392 000 152.
       </p>
     </div>

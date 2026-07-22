@@ -259,7 +259,7 @@ function sharingParties(record: ConsentRecord) {
   return [
     "Mastercard Foundation.",
     "Third-party data processors hired by Mastercard Foundation to support monitoring and evaluation, including data storage and analysis.",
-    "Organizations contracted by Outbox, or those that have a Data Sharing Agreement (DSA) with Outbox, to support programme implementation, monitoring and evaluation, including securely storing, analyzing and reporting on programme data.",
+    "Organizations contracted by Outbox, or those that have a Data Sharing Agreement (DSA) with Outbox, to support program implementation, monitoring and evaluation, including securely storing, analyzing and reporting on program data.",
   ];
 }
 
