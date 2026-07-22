@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { demoUser } from "@/lib/auth";
+import { LogoutButton } from "./LogoutButton";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -13,8 +15,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/consent/sample">Sample Space Consent</Link>
           <Link href="/consent/partner">Partner Consent</Link>
           <Link href="/records">Consent Records</Link>
-          <Link href="/login">Login</Link>
         </nav>
+        <div className="sidebar-user">
+          <strong>{demoUser.name}</strong>
+          <span>{demoUser.role}</span>
+          <LogoutButton />
+        </div>
       </aside>
       <main className="main">{children}</main>
     </div>
