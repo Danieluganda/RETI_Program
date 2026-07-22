@@ -39,11 +39,11 @@ export default function LoginPage() {
         <p>Sign in to view restricted records and dashboards.</p>
         <label>
           Email
-          <input name="email" type="email" defaultValue="collector@10x.local" required />
+          <input name="email" type="email" autoComplete="username" required />
         </label>
         <label>
           Password
-          <input name="password" type="password" defaultValue="password123" required />
+          <input name="password" type="password" autoComplete="current-password" required />
         </label>
         {error && <p className="form-message error">{error}</p>}
         <button className="button primary" type="submit" disabled={loading}>
