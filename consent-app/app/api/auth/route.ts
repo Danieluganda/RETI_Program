@@ -9,5 +9,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
   }
 
-  return NextResponse.json({ user, token: `demo-token-${user.id}` });
+  const response = NextResponse.json({ user, token: `demo-token-${user.id}` });
+  response.cookies.set("consent_auth", `demo-token-${user.id}`, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 8,
+  });
+  return response;
+}
+
+export async function DELETE() {
+  const response = NextResponse.json({ ok: true });
+  response.cookies.set("consent_auth", "", {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
+  return response;
 }
