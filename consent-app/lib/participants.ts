@@ -156,10 +156,11 @@ function toLegacyParticipantSummary(participant: LegacyParticipantRow): Particip
   };
 }
 
-export async function getParticipantsByEso(esoName: string, query = "") {
+export async function getParticipantsByEso(esoName: string, query = "", limit = 5000) {
   const normalizedEso = normalizeEso(esoName);
   const esoNames = esoSearchNames(esoName);
   const normalizedQuery = normalizeText(query);
+  const take = Math.min(Math.max(limit, 1), 5000);
 
   try {
     const participants = await prisma().participant.findMany({
@@ -177,7 +178,7 @@ export async function getParticipantsByEso(esoName: string, query = "") {
           : {}),
       },
       orderBy: [{ fullName: "asc" }],
-      take: 500,
+      take,
     });
 
     return participants.map(toParticipantSummary);
@@ -197,7 +198,7 @@ export async function getParticipantsByEso(esoName: string, query = "") {
               OR "externalId" ILIKE ${search}
             )
           ORDER BY "fullName" ASC
-          LIMIT 500
+          LIMIT ${take}
         `
       : await prisma().$queryRaw<LegacyParticipantRow[]>`
           SELECT id, "externalId", "fullName", phone, email, "esoName", district, region, sector
@@ -205,7 +206,7 @@ export async function getParticipantsByEso(esoName: string, query = "") {
           WHERE "esoName" = ANY(${esoNames})
             AND status = 'active'
           ORDER BY "fullName" ASC
-          LIMIT 500
+          LIMIT ${take}
         `;
 
     return participants.map(toLegacyParticipantSummary);
@@ -275,22 +276,26 @@ export async function getActiveEsos() {
   }
 }
 
-export async function getParticipantsByEsoId(esoId: string, query = "", limit = 100) {
+export async function getParticipantsByEsoId(esoId: string, query = "", limit = 5000) {
   const normalizedQuery = normalizeText(query);
-  const take = Math.min(Math.max(limit, 1), 100);
+  const take = Math.min(Math.max(limit, 1), 5000);
 
-  if (!esoId.trim() || normalizedQuery.length < 2) return [];
+  if (!esoId.trim()) return [];
 
   const participants = await prisma().participant.findMany({
     where: {
       esoId,
       status: "active",
-      OR: [
-        { fullName: { contains: normalizedQuery, mode: "insensitive" } },
-        { phone: { contains: normalizedQuery } },
-        { email: { contains: normalizedQuery, mode: "insensitive" } },
-        { externalId: { contains: normalizedQuery, mode: "insensitive" } },
-      ],
+      ...(normalizedQuery
+        ? {
+            OR: [
+              { fullName: { contains: normalizedQuery, mode: "insensitive" } },
+              { phone: { contains: normalizedQuery } },
+              { email: { contains: normalizedQuery, mode: "insensitive" } },
+              { externalId: { contains: normalizedQuery, mode: "insensitive" } },
+            ],
+          }
+        : {}),
     },
     orderBy: [{ fullName: "asc" }],
     take,

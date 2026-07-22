@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   const eso = searchParams.get("eso") || "";
   const participantId = searchParams.get("participantId") || "";
   const query = searchParams.get("q") || "";
-  const limit = Number(searchParams.get("limit") || "100");
+  const limit = Number(searchParams.get("limit") || "5000");
 
   if (participantId.trim() && (esoId.trim() || eso.trim())) {
     const participant = await getParticipantByIdForSelection(participantId, esoId || eso);
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   }
 
   if (esoId.trim()) {
-    const participants = await getParticipantsByEsoId(esoId, query, Number.isFinite(limit) ? limit : 20);
+    const participants = await getParticipantsByEsoId(esoId, query, Number.isFinite(limit) ? limit : 5000);
     return NextResponse.json({ participants });
   }
 
@@ -25,6 +25,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ participants: [] });
   }
 
-  const participants = await getParticipantsByEso(eso, query);
+  const participants = await getParticipantsByEso(eso, query, Number.isFinite(limit) ? limit : 5000);
   return NextResponse.json({ participants });
 }

@@ -233,7 +233,7 @@ export function ConsentForm({
   useEffect(() => {
     const query = participantSearch.trim();
 
-    if (!selectedEsoName || query.length < 2 || selectedParticipantId) {
+    if (!selectedEsoName || selectedParticipantId) {
       setParticipants([]);
       setParticipantsLoading(false);
       return;
@@ -243,8 +243,8 @@ export function ConsentForm({
     const timeout = window.setTimeout(() => {
       setParticipantsLoading(true);
       const params = selectedEsoId
-        ? `esoId=${encodeURIComponent(selectedEsoId)}&q=${encodeURIComponent(query)}&limit=100`
-        : `eso=${encodeURIComponent(selectedEsoName)}&q=${encodeURIComponent(query)}&limit=100`;
+        ? `esoId=${encodeURIComponent(selectedEsoId)}&q=${encodeURIComponent(query)}&limit=5000`
+        : `eso=${encodeURIComponent(selectedEsoName)}&q=${encodeURIComponent(query)}&limit=5000`;
 
       fetch(`/api/participants?${params}`)
         .then((response) => response.json())
@@ -612,7 +612,7 @@ export function ConsentForm({
                     participantsLoading
                       ? "Loading participants..."
                       : selectedEsoName
-                        ? "Search participant by name, phone, or ID"
+                        ? "Search or scroll participant list"
                         : "Select ESO first"
                   }
                   value={participantSearch}
@@ -654,8 +654,8 @@ export function ConsentForm({
                 )}
               </div>
             )}
-            {selectedEsoName && !participantsLoading && participantSearch.trim().length < 2 && !selectedParticipant && (
-              <p className="field-hint">Type at least two characters to search participants.</p>
+            {selectedEsoName && !participantsLoading && participants.length > 0 && !selectedParticipant && (
+              <p className="field-hint">{participants.length} participants loaded for this ESO. Type to narrow the list.</p>
             )}
             {selectedEsoName && !participantsLoading && participantSearch.trim().length >= 2 && participants.length === 0 && !selectedParticipant && (
               <p className="field-hint">No participant matches your search.</p>
