@@ -210,6 +210,12 @@ export function ConsentForm({
     };
   }, [selectedEso]);
 
+  function selectParticipant(participant: ParticipantOption) {
+    setSelectedParticipantId(participant.id);
+    setParticipantSearch("");
+    setParticipantSearchOpen(false);
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -558,10 +564,12 @@ export function ConsentForm({
                           type="button"
                           role="option"
                           className="participant-result"
+                          onMouseDown={(event) => {
+                            event.preventDefault();
+                            selectParticipant(participant);
+                          }}
                           onClick={() => {
-                            setSelectedParticipantId(participant.id);
-                            setParticipantSearch("");
-                            setParticipantSearchOpen(false);
+                            selectParticipant(participant);
                           }}
                         >
                           <span>{participant.fullName}</span>
