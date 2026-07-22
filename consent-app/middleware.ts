@@ -5,6 +5,7 @@ const publicPaths = [
   "/consent/thank-you",
   "/api/auth",
   "/api/consents",
+  "/api/esos",
   "/api/participants",
   "/api/uploads",
 ];

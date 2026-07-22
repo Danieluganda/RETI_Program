@@ -6,6 +6,8 @@ import { hasBlobStorage, readTextBlob, writeTextBlob } from "./storage";
 export type ConsentRecord = {
   id: string;
   referenceNumber: string;
+  participantId: string;
+  esoId: string;
   participantName: string;
   participantPhone: string;
   participantExternalId: string;
@@ -40,6 +42,7 @@ export type ConsentRecord = {
   pdfFile: string;
   pdfFileKey: string;
   pdfGeneratedAt: string;
+  pdfStatus: string;
   status: "locked";
   createdAt: string;
 };
@@ -57,6 +60,128 @@ function prisma() {
   }
 
   return globalForPrisma.prisma;
+}
+
+function isMissingColumnError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "P2022"
+  );
+}
+
+type LegacyConsentRow = Omit<ConsentRecord, "status"> & {
+  status: string;
+  consentDate: Date | string;
+  pdfGeneratedAt: Date | string | null;
+  createdAt: Date | string;
+};
+
+function formatDateOnly(value: Date | string) {
+  return value instanceof Date ? value.toISOString().slice(0, 10) : String(value).slice(0, 10);
+}
+
+function formatDateTime(value: Date | string | null) {
+  if (!value) return "";
+  return value instanceof Date ? value.toISOString() : String(value);
+}
+
+function toLegacyRecord(record: LegacyConsentRow): ConsentRecord {
+  return {
+    id: record.id,
+    referenceNumber: record.referenceNumber,
+    participantId: record.participantId || "",
+    esoId: record.esoId || "",
+    participantName: record.participantName,
+    participantPhone: record.participantPhone || "",
+    participantExternalId: record.participantExternalId || "",
+    programName: record.programName,
+    esoName: record.esoName || "",
+    consentFormType: record.consentFormType,
+    implementingOrganization: record.implementingOrganization || "",
+    dataCollectorOrganization: record.dataCollectorOrganization || "",
+    dataCollectorContact: record.dataCollectorContact || "",
+    privacyOrganization: record.privacyOrganization || "",
+    privacyPolicyUrl: record.privacyPolicyUrl || "",
+    withdrawalContact: record.withdrawalContact || "",
+    dataSharingOrganization: record.dataSharingOrganization || "",
+    consentDecision: record.consentDecision,
+    serviceRequired: record.serviceRequired || "",
+    authorizedPartners: record.authorizedPartners || [],
+    dataShared: record.dataShared || [],
+    informationUnderstood: record.informationUnderstood,
+    signingMethod: record.signingMethod,
+    signatureFile: record.signatureFile,
+    signatureFileKey: record.signatureFileKey,
+    interpreterUsed: record.interpreterUsed,
+    interpreterName: record.interpreterName || "",
+    interpreterOrganization: record.interpreterOrganization || "",
+    interpreterLanguage: record.interpreterLanguage || "",
+    interpreterSignatureFile: record.interpreterSignatureFile || "",
+    interpreterSignatureFileKey: record.interpreterSignatureFileKey || "",
+    collectorName: record.collectorName || "",
+    collectorId: record.collectorId || "",
+    consentDate: formatDateOnly(record.consentDate),
+    consentFormVersion: record.consentFormVersion,
+    pdfFile: record.pdfFile || "",
+    pdfFileKey: record.pdfFileKey || "",
+    pdfGeneratedAt: formatDateTime(record.pdfGeneratedAt),
+    pdfStatus: record.pdfStatus || (record.pdfFileKey ? "generated" : ""),
+    status: "locked",
+    createdAt: formatDateTime(record.createdAt),
+  };
+}
+
+async function getLegacyConsents() {
+  const records = await prisma().$queryRaw<LegacyConsentRow[]>`
+    SELECT
+      id,
+      "referenceNumber",
+      '' as "participantId",
+      '' as "esoId",
+      "participantName",
+      "participantPhone",
+      "participantExternalId",
+      "programName",
+      "esoName",
+      "consentFormType",
+      "implementingOrganization",
+      "dataCollectorOrganization",
+      "dataCollectorContact",
+      "privacyOrganization",
+      "privacyPolicyUrl",
+      "withdrawalContact",
+      "dataSharingOrganization",
+      "consentDecision",
+      "serviceRequired",
+      "authorizedPartners",
+      "dataShared",
+      "informationUnderstood",
+      "signingMethod",
+      "signatureFile",
+      "signatureFileKey",
+      "interpreterUsed",
+      "interpreterName",
+      "interpreterOrganization",
+      "interpreterLanguage",
+      "interpreterSignatureFile",
+      "interpreterSignatureFileKey",
+      "collectorName",
+      "collectorId",
+      "consentDate",
+      "consentFormVersion",
+      "pdfFile",
+      "pdfFileKey",
+      "pdfGeneratedAt",
+      CASE WHEN "pdfFileKey" IS NOT NULL AND "pdfFileKey" <> '' THEN 'generated' ELSE '' END as "pdfStatus",
+      status,
+      "createdAt"
+    FROM "Consent"
+    ORDER BY "createdAt" DESC
+  `;
+
+  return records.map(toLegacyRecord);
 }
 
 async function ensureDataFile() {
@@ -87,6 +212,8 @@ function toRecord(record: Consent): ConsentRecord {
   return {
     id: record.id,
     referenceNumber: record.referenceNumber,
+    participantId: record.participantId || "",
+    esoId: record.esoId || "",
     participantName: record.participantName,
     participantPhone: record.participantPhone || "",
     participantExternalId: record.participantExternalId || "",
@@ -121,6 +248,7 @@ function toRecord(record: Consent): ConsentRecord {
     pdfFile: record.pdfFile || "",
     pdfFileKey: record.pdfFileKey || "",
     pdfGeneratedAt: record.pdfGeneratedAt?.toISOString() || "",
+    pdfStatus: record.pdfStatus || "",
     status: "locked",
     createdAt: record.createdAt.toISOString(),
   };
@@ -128,8 +256,15 @@ function toRecord(record: Consent): ConsentRecord {
 
 export async function getConsents() {
   if (usePrisma) {
-    const records = await prisma().consent.findMany({ orderBy: { createdAt: "desc" } });
-    return records.map(toRecord);
+    try {
+      const records = await prisma().consent.findMany({ orderBy: { createdAt: "desc" } });
+      return records.map(toRecord);
+    } catch (error) {
+      if (isMissingColumnError(error)) {
+        return getLegacyConsents();
+      }
+      throw error;
+    }
   }
 
   if (hasBlobStorage()) {
@@ -147,6 +282,8 @@ export async function saveConsent(record: ConsentRecord) {
       data: {
         id: record.id,
         referenceNumber: record.referenceNumber,
+        participantId: record.participantId || null,
+        esoId: record.esoId || null,
         participantName: record.participantName,
         participantPhone: record.participantPhone,
         participantExternalId: record.participantExternalId,
@@ -181,6 +318,7 @@ export async function saveConsent(record: ConsentRecord) {
         pdfFile: record.pdfFile,
         pdfFileKey: record.pdfFileKey,
         pdfGeneratedAt: record.pdfGeneratedAt ? new Date(record.pdfGeneratedAt) : null,
+        pdfStatus: record.pdfStatus,
         status: record.status,
         createdAt: new Date(record.createdAt),
       },

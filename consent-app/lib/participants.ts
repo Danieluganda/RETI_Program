@@ -8,8 +8,9 @@ const esoAliases: Record<string, string> = {
   challenges: "Challenges Uganda",
   curad: "CURAD",
   dfcu: "DFCU Foundation",
-  echai: "ECHAI",
-  excel: "ECHAI",
+  echai: "ECHAI/Excelhort",
+  excel: "ECHAI/Excelhort",
+  excelhort: "ECHAI/Excelhort",
   findingxy: "Finding XY",
   finding: "Finding XY",
   leu: "Living Earth Uganda",
@@ -70,17 +71,52 @@ export function normalizeEso(value: string) {
   return cleaned;
 }
 
+function displayEsoName(value: string) {
+  return normalizeEso(value);
+}
+
+function esoSearchNames(value: string) {
+  const normalized = normalizeEso(value);
+  return normalized === "ECHAI/Excelhort" ? [normalized, "ECHAI", "Excelhort", "ECHAI Excelhort"] : [normalized];
+}
+
 export type ParticipantSummary = {
   id: string;
   externalId: string;
   fullName: string;
   phone: string;
   email: string;
+  esoId: string;
   esoName: string;
   district: string;
   region: string;
   sector: string;
+  status: string;
+  createdAt: string;
 };
+
+type LegacyParticipantRow = {
+  id: string;
+  externalId: string | null;
+  fullName: string;
+  phone: string | null;
+  email: string | null;
+  esoName: string;
+  district: string | null;
+  region: string | null;
+  sector: string | null;
+  status?: string;
+  createdAt?: Date | string;
+};
+
+function isMissingColumnOrTable(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    ["P2021", "P2022"].includes(String((error as { code?: string }).code))
+  );
+}
 
 export function toParticipantSummary(participant: Participant): ParticipantSummary {
   return {
@@ -89,34 +125,237 @@ export function toParticipantSummary(participant: Participant): ParticipantSumma
     fullName: participant.fullName,
     phone: participant.phone || "",
     email: participant.email || "",
-    esoName: participant.esoName,
+    esoId: participant.esoId || "",
+    esoName: displayEsoName(participant.esoName),
     district: participant.district || "",
     region: participant.region || "",
     sector: participant.sector || "",
+    status: participant.status,
+    createdAt: participant.createdAt.toISOString(),
+  };
+}
+
+function toLegacyParticipantSummary(participant: LegacyParticipantRow): ParticipantSummary {
+  return {
+    id: participant.id,
+    externalId: participant.externalId || "",
+    fullName: participant.fullName,
+    phone: participant.phone || "",
+    email: participant.email || "",
+    esoId: "",
+    esoName: displayEsoName(participant.esoName),
+    district: participant.district || "",
+    region: participant.region || "",
+    sector: participant.sector || "",
+    status: participant.status || "active",
+    createdAt: participant.createdAt
+      ? participant.createdAt instanceof Date
+        ? participant.createdAt.toISOString()
+        : String(participant.createdAt)
+      : "",
   };
 }
 
 export async function getParticipantsByEso(esoName: string, query = "") {
   const normalizedEso = normalizeEso(esoName);
+  const esoNames = esoSearchNames(esoName);
   const normalizedQuery = normalizeText(query);
+
+  try {
+    const participants = await prisma().participant.findMany({
+      where: {
+        esoName: { in: esoNames },
+        status: "active",
+        ...(normalizedQuery
+          ? {
+              OR: [
+                { fullName: { contains: normalizedQuery, mode: "insensitive" } },
+                { phone: { contains: normalizedQuery } },
+                { externalId: { contains: normalizedQuery, mode: "insensitive" } },
+              ],
+            }
+          : {}),
+      },
+      orderBy: [{ fullName: "asc" }],
+      take: 500,
+    });
+
+    return participants.map(toParticipantSummary);
+  } catch (error) {
+    if (!isMissingColumnOrTable(error)) throw error;
+
+    const search = `%${normalizedQuery}%`;
+    const participants = normalizedQuery
+      ? await prisma().$queryRaw<LegacyParticipantRow[]>`
+          SELECT id, "externalId", "fullName", phone, email, "esoName", district, region, sector
+          FROM "Participant"
+          WHERE "esoName" = ANY(${esoNames})
+            AND status = 'active'
+            AND (
+              "fullName" ILIKE ${search}
+              OR phone LIKE ${search}
+              OR "externalId" ILIKE ${search}
+            )
+          ORDER BY "fullName" ASC
+          LIMIT 500
+        `
+      : await prisma().$queryRaw<LegacyParticipantRow[]>`
+          SELECT id, "externalId", "fullName", phone, email, "esoName", district, region, sector
+          FROM "Participant"
+          WHERE "esoName" = ANY(${esoNames})
+            AND status = 'active'
+          ORDER BY "fullName" ASC
+          LIMIT 500
+        `;
+
+    return participants.map(toLegacyParticipantSummary);
+  }
+}
+
+export async function getActiveParticipants() {
+  try {
+    const participants = await prisma().participant.findMany({
+      where: { status: "active" },
+      orderBy: [{ esoName: "asc" }, { fullName: "asc" }],
+    });
+
+    return participants.map(toParticipantSummary);
+  } catch (error) {
+    if (!isMissingColumnOrTable(error)) throw error;
+
+    const participants = await prisma().$queryRaw<LegacyParticipantRow[]>`
+      SELECT id, "externalId", "fullName", phone, email, "esoName", district, region, sector, status, "createdAt"
+      FROM "Participant"
+      WHERE status = 'active'
+      ORDER BY "esoName" ASC, "fullName" ASC
+    `;
+
+    return participants.map(toLegacyParticipantSummary);
+  }
+}
+
+export async function getActiveEsos() {
+  try {
+    return await prisma().eso.findMany({
+      where: { status: "active" },
+      orderBy: { name: "asc" },
+    });
+  } catch (error) {
+    if (!isMissingColumnOrTable(error)) {
+      throw error;
+    }
+
+    const participants = await prisma().$queryRaw<Array<{ esoName: string; esoCode: string | null }>>`
+      SELECT DISTINCT "esoName", "esoCode"
+      FROM "Participant"
+      WHERE status = 'active'
+      ORDER BY "esoName" ASC
+    `;
+
+    return [
+      ...new Map(
+        participants
+          .filter((participant) => participant.esoName.trim())
+          .map((participant) => {
+            const name = displayEsoName(participant.esoName);
+            return [
+              name,
+              {
+                id: "",
+                name,
+                code: participant.esoCode || "",
+                status: "active",
+                createdAt: new Date(0),
+                updatedAt: new Date(0),
+              },
+            ];
+          }),
+      ).values(),
+    ];
+  }
+}
+
+export async function getParticipantsByEsoId(esoId: string, query = "", limit = 100) {
+  const normalizedQuery = normalizeText(query);
+  const take = Math.min(Math.max(limit, 1), 100);
+
+  if (!esoId.trim() || normalizedQuery.length < 2) return [];
 
   const participants = await prisma().participant.findMany({
     where: {
-      esoName: normalizedEso,
+      esoId,
       status: "active",
-      ...(normalizedQuery
-        ? {
-            OR: [
-              { fullName: { contains: normalizedQuery, mode: "insensitive" } },
-              { phone: { contains: normalizedQuery } },
-              { externalId: { contains: normalizedQuery, mode: "insensitive" } },
-            ],
-          }
-        : {}),
+      OR: [
+        { fullName: { contains: normalizedQuery, mode: "insensitive" } },
+        { phone: { contains: normalizedQuery } },
+        { email: { contains: normalizedQuery, mode: "insensitive" } },
+        { externalId: { contains: normalizedQuery, mode: "insensitive" } },
+      ],
     },
     orderBy: [{ fullName: "asc" }],
-    take: 500,
+    take,
   });
 
   return participants.map(toParticipantSummary);
+}
+
+export async function getParticipantByIdForSelection(participantId: string, esoIdOrName: string) {
+  if (!participantId.trim() || !esoIdOrName.trim()) return null;
+  const esoNames = esoSearchNames(esoIdOrName);
+
+  try {
+    const participant = await prisma().participant.findFirst({
+      where: {
+        id: participantId,
+        status: "active",
+        OR: [{ esoId: esoIdOrName }, { esoName: { in: esoNames } }],
+      },
+    });
+
+    return participant ? toParticipantSummary(participant) : null;
+  } catch (error) {
+    if (!isMissingColumnOrTable(error)) throw error;
+
+    const participants = await prisma().$queryRaw<LegacyParticipantRow[]>`
+      SELECT id, "externalId", "fullName", phone, email, "esoName", district, region, sector, status, "createdAt"
+      FROM "Participant"
+      WHERE id = ${participantId}
+        AND "esoName" = ANY(${esoNames})
+        AND status = 'active'
+      LIMIT 1
+    `;
+
+    return participants[0] ? toLegacyParticipantSummary(participants[0]) : null;
+  }
+}
+
+export async function getParticipantForConsent(participantId: string, esoId: string) {
+  if (!participantId.trim() || !esoId.trim()) return null;
+  const esoNames = esoSearchNames(esoId);
+
+  try {
+    return prisma().participant.findFirst({
+      where: {
+        id: participantId,
+        status: "active",
+        OR: [{ esoId }, { esoName: { in: esoNames } }],
+      },
+      include: {
+        eso: true,
+      },
+    });
+  } catch (error) {
+    if (!isMissingColumnOrTable(error)) throw error;
+
+    const participants = await prisma().$queryRaw<Array<Participant & { eso: null }>>`
+      SELECT *, NULL as eso
+      FROM "Participant"
+      WHERE id = ${participantId}
+        AND "esoName" = ANY(${esoNames})
+        AND status = 'active'
+      LIMIT 1
+    `;
+
+    return participants[0] || null;
+  }
 }

@@ -1,5 +1,6 @@
 const fs = require("node:fs");
 const path = require("node:path");
+const { randomUUID } = require("node:crypto");
 const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
@@ -11,8 +12,9 @@ const esoAliases = {
   challenges: "Challenges Uganda",
   curad: "CURAD",
   dfcu: "DFCU Foundation",
-  echai: "ECHAI",
-  excel: "ECHAI",
+  echai: "ECHAI/Excelhort",
+  excel: "ECHAI/Excelhort",
+  excelhort: "ECHAI/Excelhort",
   findingxy: "Finding XY",
   finding: "Finding XY",
   leu: "Living Earth Uganda",
@@ -115,7 +117,13 @@ async function main() {
   const [headerRow, ...dataRows] = parseCsv(text);
   const header = headerRow.map(clean);
   const participants = [];
+  const seenExternalIds = new Set();
+  const duplicateExternalIds = new Set();
   let skipped = 0;
+  let invalid = 0;
+  let created = 0;
+  let updated = 0;
+  let unchanged = 0;
   const esos = new Map();
 
   for (const values of dataRows) {
@@ -131,11 +139,20 @@ async function main() {
 
     if (!fullName || !esoName) {
       skipped += 1;
+      invalid += 1;
       continue;
     }
 
+    const stableExternalId = externalId || `${esoName}:${fullName}`;
+    if (seenExternalIds.has(stableExternalId)) {
+      duplicateExternalIds.add(stableExternalId);
+      skipped += 1;
+      continue;
+    }
+    seenExternalIds.add(stableExternalId);
+
     participants.push({
-      externalId: externalId || `${esoName}:${fullName}`,
+      externalId: stableExternalId,
       fullName,
       normalizedName: fullName.toLowerCase(),
       phone: normalizePhone(pick(row, header, "Primary Phone Number")),
@@ -151,18 +168,156 @@ async function main() {
     esos.set(esoName, (esos.get(esoName) || 0) + 1);
   }
 
-  await prisma.participant.deleteMany();
+  const esoByName = new Map();
+  const hasEsoTable =
+    Number(
+      (
+        await prisma.$queryRawUnsafe(
+          "SELECT count(*)::int as count FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'Eso'",
+        )
+      )[0]?.count || 0,
+    ) > 0;
+  const hasParticipantEsoId =
+    Number(
+      (
+        await prisma.$queryRawUnsafe(
+          "SELECT count(*)::int as count FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'Participant' AND column_name = 'esoId'",
+        )
+      )[0]?.count || 0,
+    ) > 0;
 
-  const batchSize = 1000;
-  for (let index = 0; index < participants.length; index += batchSize) {
-    await prisma.participant.createMany({
-      data: participants.slice(index, index + batchSize),
-      skipDuplicates: true,
-    });
+  if (hasEsoTable) {
+    for (const [name] of esos) {
+      const eso = await prisma.eso.upsert({
+        where: { name },
+        create: {
+          name,
+          code: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || null,
+        },
+        update: {
+          status: "active",
+        },
+      });
+      esoByName.set(name, eso);
+    }
   }
 
-  const imported = await prisma.participant.count();
-  console.log(JSON.stringify({ imported, skipped, esos: Object.fromEntries(esos) }, null, 2));
+  for (const participant of participants) {
+    const eso = esoByName.get(participant.esoName);
+    if (hasParticipantEsoId && !eso) {
+      skipped += 1;
+      invalid += 1;
+      continue;
+    }
+
+    const nextData = hasParticipantEsoId ? { ...participant, esoId: eso.id } : participant;
+    const existing = (
+      await prisma.$queryRawUnsafe(
+        'SELECT id, "fullName", "normalizedName", phone, email, "esoName", "esoCode", district, region, sector, status FROM "Participant" WHERE "externalId" = $1 LIMIT 1',
+        participant.externalId,
+      )
+    )[0];
+
+    if (!existing) {
+      if (hasParticipantEsoId) {
+        await prisma.participant.create({ data: nextData });
+      } else {
+        await prisma.$executeRawUnsafe(
+          'INSERT INTO "Participant" ("id", "externalId", "fullName", "normalizedName", phone, email, "esoName", "esoCode", district, region, sector, status, source, "createdAt", "updatedAt") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,now(),now())',
+          randomUUID(),
+          participant.externalId,
+          participant.fullName,
+          participant.normalizedName,
+          participant.phone,
+          participant.email,
+          participant.esoName,
+          participant.esoCode,
+          participant.district,
+          participant.region,
+          participant.sector,
+          participant.status,
+          "participant_csv",
+        );
+      }
+      created += 1;
+      continue;
+    }
+
+    const comparableExisting = {
+      fullName: existing.fullName,
+      normalizedName: existing.normalizedName,
+      phone: existing.phone || "",
+      email: existing.email || "",
+      esoName: existing.esoName,
+      esoCode: existing.esoCode || "",
+      district: existing.district || "",
+      region: existing.region || "",
+      sector: existing.sector || "",
+      status: existing.status,
+    };
+    const comparableNext = {
+      fullName: nextData.fullName,
+      normalizedName: nextData.normalizedName,
+      phone: nextData.phone || "",
+      email: nextData.email || "",
+      esoName: nextData.esoName,
+      esoCode: nextData.esoCode || "",
+      district: nextData.district || "",
+      region: nextData.region || "",
+      sector: nextData.sector || "",
+      status: nextData.status,
+    };
+
+    if (JSON.stringify(comparableExisting) === JSON.stringify(comparableNext)) {
+      unchanged += 1;
+      continue;
+    }
+
+    if (hasParticipantEsoId) {
+      await prisma.participant.update({
+        where: { externalId: participant.externalId },
+        data: nextData,
+      });
+    } else {
+      await prisma.$executeRawUnsafe(
+        'UPDATE "Participant" SET "fullName"=$1, "normalizedName"=$2, phone=$3, email=$4, "esoName"=$5, "esoCode"=$6, district=$7, region=$8, sector=$9, status=$10, "updatedAt"=now() WHERE "externalId"=$11',
+        participant.fullName,
+        participant.normalizedName,
+        participant.phone,
+        participant.email,
+        participant.esoName,
+        participant.esoCode,
+        participant.district,
+        participant.region,
+        participant.sector,
+        participant.status,
+        participant.externalId,
+      );
+    }
+    updated += 1;
+  }
+
+  console.log(
+    JSON.stringify(
+      {
+        totalRowsRead: dataRows.length,
+        created,
+        updated,
+        unchanged,
+        skipped,
+        invalid,
+        duplicateExternalIds: duplicateExternalIds.size,
+        activeParticipants: Number(
+          (
+            await prisma.$queryRawUnsafe('SELECT count(*)::int as count FROM "Participant" WHERE status = \'active\'')
+          )[0]?.count || 0,
+        ),
+        esos: Object.fromEntries(esos),
+      },
+      null,
+      2,
+    ),
+  );
 }
 
 main()

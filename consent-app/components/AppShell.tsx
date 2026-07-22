@@ -15,6 +15,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/consent/sample">Sample Space Consent</Link>
           <Link href="/consent/partner">Partner Consent</Link>
           <Link href="/records">Consent Records</Link>
+          <Link href="/participants/pending">Pending Participants</Link>
         </nav>
         <div className="sidebar-user">
           <strong>{demoUser.name}</strong>

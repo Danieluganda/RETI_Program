@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { getConsents, nextReference, saveConsent, type ConsentRecord } from "@/lib/db";
+import { getParticipantForConsent } from "@/lib/participants";
 import { generateConsentPdf } from "@/lib/pdf";
 import { fileUrl, saveDataImage } from "@/lib/storage";
 import { validateConsentPayload, type ConsentPayload } from "@/lib/validation";
@@ -17,6 +18,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: errors.join(" ") }, { status: 422 });
   }
 
+  const participant = await getParticipantForConsent(body.participantId || "", body.esoId || "");
+  if (!participant) {
+    return NextResponse.json(
+      { error: "Selected participant is invalid, inactive, or does not belong to the selected ESO." },
+      { status: 422 },
+    );
+  }
+
   const referenceNumber = await nextReference();
   const signatureFileKey = await saveDataImage(referenceNumber, "participant-signature", body.participantSignatureData);
   const interpreterSignatureFileKey = await saveDataImage(
@@ -29,11 +38,13 @@ export async function POST(request: Request) {
   const record: ConsentRecord = {
     id: randomUUID(),
     referenceNumber,
-    participantName: body.participantName?.trim() || "",
-    participantPhone: body.participantPhone || "",
-    participantExternalId: body.participantExternalId || "",
+    participantId: participant.id,
+    esoId: participant.esoId || "",
+    participantName: participant.fullName,
+    participantPhone: participant.phone || "",
+    participantExternalId: participant.externalId || "",
     programName: body.programName || "10X: Enabling growth of MSMEs through the digital economy",
-    esoName: body.esoName || "",
+    esoName: participant.eso?.name || participant.esoName || "",
     consentFormType: body.consentFormType || "sample-space",
     implementingOrganization: body.implementingOrganization || "Outbox (U) Limited",
     dataCollectorOrganization:
@@ -44,7 +55,7 @@ export async function POST(request: Request) {
     privacyPolicyUrl: body.privacyPolicyUrl || "zulu@outbox.africa; +256 (0) 392 000 152",
     withdrawalContact: body.withdrawalContact || "zulu@outbox.africa; +256 (0) 392 000 152",
     dataSharingOrganization: body.dataSharingOrganization || "Outbox",
-    consentDecision: body.consentDecision || "consented",
+    consentDecision: body.consentDecision || "",
     serviceRequired: body.serviceRequired || "",
     authorizedPartners: Array.isArray(body.authorizedPartners) ? body.authorizedPartners : [],
     dataShared: Array.isArray(body.dataShared) ? body.dataShared : [],
@@ -65,6 +76,7 @@ export async function POST(request: Request) {
     pdfFile: "",
     pdfFileKey: "",
     pdfGeneratedAt: "",
+    pdfStatus: "pending",
     status: "locked",
     createdAt: new Date().toISOString(),
   };
@@ -73,6 +85,7 @@ export async function POST(request: Request) {
   record.pdfFile = pdf.pdfFile;
   record.pdfFileKey = pdf.pdfFileKey;
   record.pdfGeneratedAt = pdf.pdfGeneratedAt;
+  record.pdfStatus = "generated";
 
   const savedRecord = await saveConsent(record);
 

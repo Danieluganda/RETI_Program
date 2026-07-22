@@ -11,7 +11,9 @@ export type ConsentPayload = {
   participantName?: string;
   participantPhone?: string;
   participantExternalId?: string;
+  participantId?: string;
   programName?: string;
+  esoId?: string;
   esoName?: string;
   consentDecision?: "consented" | "declined";
   serviceRequired?: string;
@@ -32,8 +34,11 @@ export type ConsentPayload = {
 export function validateConsentPayload(payload: ConsentPayload) {
   const errors: string[] = [];
 
-  if (!payload.participantName?.trim()) errors.push("Participant name is required.");
-  if (!payload.consentDecision) errors.push("Consent decision is required.");
+  if (!payload.participantId?.trim()) errors.push("Participant selection is required.");
+  if (!payload.esoId?.trim()) errors.push("Entrepreneurship Support Organization is required.");
+  if (!payload.consentDecision || !["consented", "declined"].includes(payload.consentDecision)) {
+    errors.push("Consent decision must be consented or declined.");
+  }
   if (!payload.informationUnderstood) errors.push("Understanding confirmation is required.");
 
   return errors;

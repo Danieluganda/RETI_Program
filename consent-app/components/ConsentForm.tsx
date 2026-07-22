@@ -108,7 +108,7 @@ const partnerOptions = [
 
 const esoOptions = [
   "DFCU Foundation",
-  "ECHAI",
+  "ECHAI/Excelhort",
   "PEDN",
   "Stanbic Bank Incubator",
   "Living Earth Uganda",
@@ -129,18 +129,29 @@ type ParticipantOption = {
   fullName: string;
   phone: string;
   email: string;
+  esoId: string;
   esoName: string;
   district: string;
   region: string;
   sector: string;
 };
 
+type EsoOption = {
+  id: string;
+  name: string;
+  code: string;
+};
+
 export function ConsentForm({
   initialFormType = "sample-space",
   lockFormType = false,
+  initialEsoId = "",
+  initialParticipantId = "",
 }: {
   initialFormType?: ConsentFormType;
   lockFormType?: boolean;
+  initialEsoId?: string;
+  initialParticipantId?: string;
 }) {
   const router = useRouter();
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
@@ -154,7 +165,9 @@ export function ConsentForm({
   const [serviceRequired, setServiceRequired] = useState<PartnerService>("device-financing");
   const [authorizedPartners, setAuthorizedPartners] = useState<string[]>([partnerOptions[0]]);
   const [interpreterUsed, setInterpreterUsed] = useState(false);
-  const [selectedEso, setSelectedEso] = useState("");
+  const [esos, setEsos] = useState<EsoOption[]>([]);
+  const [selectedEsoId, setSelectedEsoId] = useState("");
+  const [selectedEsoName, setSelectedEsoName] = useState("");
   const [participants, setParticipants] = useState<ParticipantOption[]>([]);
   const [selectedParticipantId, setSelectedParticipantId] = useState("");
   const [participantSearch, setParticipantSearch] = useState("");
@@ -164,51 +177,93 @@ export function ConsentForm({
   const isPartnerConsent = consentFormType === "third-party-data-sharing";
   const dataShared = isPartnerConsent ? partnerServiceData[serviceRequired] : template.dataList;
   const selectedParticipant = participants.find((participant) => participant.id === selectedParticipantId);
-  const filteredParticipants = useMemo(() => {
-    const query = participantSearch.trim().toLowerCase();
-    const source = query
-      ? participants.filter((participant) =>
-          [participant.fullName, participant.phone, participant.externalId]
-            .join(" ")
-            .toLowerCase()
-            .includes(query),
-        )
-      : participants;
-
-    return source.slice(0, 12);
-  }, [participantSearch, participants]);
 
   useEffect(() => {
-    if (!selectedEso) {
-      setParticipants([]);
-      setSelectedParticipantId("");
-      setParticipantSearch("");
-      setParticipantSearchOpen(false);
-      return;
-    }
-
     let active = true;
-    setParticipantsLoading(true);
-    setSelectedParticipantId("");
-    setParticipantSearch("");
-    setParticipantSearchOpen(false);
 
-    fetch(`/api/participants?eso=${encodeURIComponent(selectedEso)}`)
+    fetch("/api/esos")
       .then((response) => response.json())
       .then((data) => {
-        if (active) setParticipants(data.participants || []);
+        if (!active) return;
+        const loadedEsos = data.esos || [];
+        const nextEsos = loadedEsos.length ? loadedEsos : esoOptions.map((name) => ({ id: "", name, code: "" }));
+        setEsos(nextEsos);
+        if (initialEsoId) {
+          const initialEso = nextEsos.find((eso: EsoOption) => eso.id === initialEsoId || eso.name === initialEsoId);
+          if (initialEso) {
+            setSelectedEsoId(initialEso.id || "");
+            setSelectedEsoName(initialEso.name);
+          }
+        }
       })
       .catch(() => {
-        if (active) setParticipants([]);
-      })
-      .finally(() => {
-        if (active) setParticipantsLoading(false);
+        if (active) setEsos(esoOptions.map((name) => ({ id: "", name, code: "" })));
       });
 
     return () => {
       active = false;
     };
-  }, [selectedEso]);
+  }, [initialEsoId]);
+
+  useEffect(() => {
+    if (!initialParticipantId || !selectedEsoName || selectedParticipantId) return;
+
+    let active = true;
+    const params = selectedEsoId
+      ? `esoId=${encodeURIComponent(selectedEsoId)}&participantId=${encodeURIComponent(initialParticipantId)}`
+      : `eso=${encodeURIComponent(selectedEsoName)}&participantId=${encodeURIComponent(initialParticipantId)}`;
+
+    fetch(`/api/participants?${params}`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (!active) return;
+        const participant = data.participants?.[0];
+        if (participant) {
+          setParticipants([participant]);
+          selectParticipant(participant);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, [initialParticipantId, selectedEsoId, selectedEsoName, selectedParticipantId]);
+
+  useEffect(() => {
+    const query = participantSearch.trim();
+
+    if (!selectedEsoName || query.length < 2 || selectedParticipantId) {
+      setParticipants([]);
+      setParticipantsLoading(false);
+      return;
+    }
+
+    let active = true;
+    const timeout = window.setTimeout(() => {
+      setParticipantsLoading(true);
+      const params = selectedEsoId
+        ? `esoId=${encodeURIComponent(selectedEsoId)}&q=${encodeURIComponent(query)}&limit=100`
+        : `eso=${encodeURIComponent(selectedEsoName)}&q=${encodeURIComponent(query)}&limit=100`;
+
+      fetch(`/api/participants?${params}`)
+        .then((response) => response.json())
+        .then((data) => {
+          if (active) setParticipants(data.participants || []);
+        })
+        .catch(() => {
+          if (active) setParticipants([]);
+        })
+        .finally(() => {
+          if (active) setParticipantsLoading(false);
+        });
+    }, 300);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+    };
+  }, [participantSearch, selectedEsoId, selectedEsoName, selectedParticipantId]);
 
   function selectParticipant(participant: ParticipantOption) {
     setSelectedParticipantId(participant.id);
@@ -232,6 +287,9 @@ export function ConsentForm({
         participantName: selectedParticipant?.fullName || body.participantName,
         participantPhone: selectedParticipant?.phone || "",
         participantExternalId: selectedParticipant?.externalId || "",
+        participantId: selectedParticipant?.id || "",
+        esoId: selectedParticipant?.esoId || selectedEsoId,
+        esoName: selectedParticipant?.esoName || selectedEsoName,
         consentFormType,
         consentFormVersion: template.version,
         consentDecision: body.consentDecision || "consented",
@@ -339,18 +397,29 @@ export function ConsentForm({
               id="esoName"
               name="esoName"
               required
-              value={selectedEso}
-              onChange={(event) => setSelectedEso(event.target.value)}
+              value={selectedEsoId || selectedEsoName}
+              onChange={(event) => {
+                const value = event.target.value;
+                const eso = esos.find((item) => (item.id || item.name) === value);
+                setSelectedEsoId(eso?.id || "");
+                setSelectedEsoName(eso?.name || "");
+                setSelectedParticipantId("");
+                setParticipantSearch("");
+                setParticipantSearchOpen(false);
+                setParticipants([]);
+              }}
             >
               <option value="" disabled>
                 Select Entrepreneur Support Organization
               </option>
-              {esoOptions.map((eso) => (
-                <option key={eso} value={eso}>
-                  {eso}
+              {esos.map((eso) => (
+                <option key={eso.id || eso.name} value={eso.id || eso.name}>
+                  {eso.name}
                 </option>
               ))}
             </select>
+            <input type="hidden" name="esoId" value={selectedEsoId} />
+            <input type="hidden" name="esoName" value={selectedEsoName} />
           </div>
           <div>
             <label htmlFor="dataCollectorContact">Data collector contact information</label>
@@ -542,7 +611,7 @@ export function ConsentForm({
                   placeholder={
                     participantsLoading
                       ? "Loading participants..."
-                      : selectedEso
+                      : selectedEsoName
                         ? "Search participant by name, phone, or ID"
                         : "Select ESO first"
                   }
@@ -551,14 +620,14 @@ export function ConsentForm({
                     setParticipantSearch(event.target.value);
                     setParticipantSearchOpen(true);
                   }}
-                  onFocus={() => selectedEso && setParticipantSearchOpen(true)}
-                  disabled={!selectedEso || participantsLoading}
+                  onFocus={() => selectedEsoName && setParticipantSearchOpen(true)}
+                  disabled={!selectedEsoName || participantsLoading}
                   required
                 />
-                {participantSearchOpen && selectedEso && !participantsLoading && participants.length > 0 && (
+                {participantSearchOpen && selectedEsoName && !participantsLoading && participants.length > 0 && (
                   <div className="participant-results" role="listbox">
-                    {filteredParticipants.length > 0 ? (
-                      filteredParticipants.map((participant) => (
+                    {participants.length > 0 ? (
+                      participants.map((participant) => (
                         <button
                           key={participant.id}
                           type="button"
@@ -585,14 +654,18 @@ export function ConsentForm({
                 )}
               </div>
             )}
-            {selectedEso && !participantsLoading && participants.length === 0 && (
-              <p className="field-hint">No imported participants found for this ESO.</p>
+            {selectedEsoName && !participantsLoading && participantSearch.trim().length < 2 && !selectedParticipant && (
+              <p className="field-hint">Type at least two characters to search participants.</p>
+            )}
+            {selectedEsoName && !participantsLoading && participantSearch.trim().length >= 2 && participants.length === 0 && !selectedParticipant && (
+              <p className="field-hint">No participant matches your search.</p>
             )}
           </div>
           <div className="grid two">
             <div>
               <label htmlFor="participantName">Participant name</label>
               <input id="participantName" name="participantName" value={selectedParticipant?.fullName || ""} readOnly required />
+              <input type="hidden" name="participantId" value={selectedParticipant?.id || ""} />
               <input type="hidden" name="participantExternalId" value={selectedParticipant?.externalId || ""} />
             </div>
             <div>

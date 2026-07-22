@@ -20,6 +20,10 @@ model User {
 model Consent {
   id                       String   @id @default(cuid())
   referenceNumber          String   @unique
+  participantId            String?
+  participant              Participant? @relation(fields: [participantId], references: [id])
+  esoId                    String?
+  eso                      Eso?     @relation(fields: [esoId], references: [id])
   participantName          String
   participantPhone         String?
   participantExternalId    String?
@@ -55,8 +59,28 @@ model Consent {
   pdfFile                  String?
   pdfFileKey               String?
   pdfGeneratedAt           DateTime?
+  pdfStatus                String   @default("pending")
+  supersededById           String?
   status                   String   @default("locked")
   createdAt                DateTime @default(now())
+
+  @@index([participantId])
+  @@index([esoId])
+  @@index([consentDecision])
+  @@index([status])
+  @@index([pdfStatus])
+  @@index([createdAt])
+}
+
+model Eso {
+  id           String        @id @default(cuid())
+  name         String        @unique
+  code         String?       @unique
+  status       String        @default("active")
+  participants Participant[]
+  consents     Consent[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
 model Participant {
@@ -68,6 +92,9 @@ model Participant {
   email          String?
   esoName        String
   esoCode        String?
+  esoId          String?
+  eso            Eso?     @relation(fields: [esoId], references: [id])
+  consents       Consent[]
   district       String?
   region         String?
   sector         String?
@@ -77,5 +104,7 @@ model Participant {
   updatedAt      DateTime @updatedAt
 
   @@index([esoName])
+  @@index([esoId])
   @@index([normalizedName])
+  @@index([status])
 }
