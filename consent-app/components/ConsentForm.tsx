@@ -328,33 +328,6 @@ export function ConsentForm({
             </select>
           </div>
           <div>
-            <label htmlFor="participantSelect">Participant</label>
-            <select
-              id="participantSelect"
-              required
-              value={selectedParticipantId}
-              onChange={(event) => setSelectedParticipantId(event.target.value)}
-              disabled={!selectedEso || participantsLoading}
-            >
-              <option value="">
-                {participantsLoading
-                  ? "Loading participants..."
-                  : selectedEso
-                    ? "Select participant"
-                    : "Select ESO first"}
-              </option>
-              {participants.map((participant) => (
-                <option key={participant.id} value={participant.id}>
-                  {participant.fullName}
-                  {participant.phone ? ` - ${participant.phone}` : ""}
-                </option>
-              ))}
-            </select>
-            {selectedEso && !participantsLoading && participants.length === 0 && (
-              <p className="field-hint">No imported participants found for this ESO.</p>
-            )}
-          </div>
-          <div>
             <label htmlFor="dataCollectorContact">Data collector contact information</label>
             <input id="dataCollectorContact" name="dataCollectorContact" defaultValue="+256 (0) 392 000 152; info@outbox.africa" required />
           </div>
@@ -515,6 +488,33 @@ export function ConsentForm({
 
         <section className="section">
           <h2>Participant Confirmation</h2>
+          <div className="participant-picker">
+            <label htmlFor="participantSelect">Participant</label>
+            <select
+              id="participantSelect"
+              required
+              value={selectedParticipantId}
+              onChange={(event) => setSelectedParticipantId(event.target.value)}
+              disabled={!selectedEso || participantsLoading}
+            >
+              <option value="">
+                {participantsLoading
+                  ? "Loading participants..."
+                  : selectedEso
+                    ? "Select participant"
+                    : "Select ESO first"}
+              </option>
+              {participants.map((participant) => (
+                <option key={participant.id} value={participant.id}>
+                  {participant.fullName}
+                  {participant.phone ? ` - ${participant.phone}` : ""}
+                </option>
+              ))}
+            </select>
+            {selectedEso && !participantsLoading && participants.length === 0 && (
+              <p className="field-hint">No imported participants found for this ESO.</p>
+            )}
+          </div>
           <div className="grid two">
             <div>
               <label htmlFor="participantName">Participant name</label>

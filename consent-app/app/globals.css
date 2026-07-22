@@ -234,6 +234,10 @@ button,
   gap: 16px;
 }
 
+.participant-picker {
+  margin-bottom: 16px;
+}
+
 .form-grid {
   display: grid;
   gap: 16px;
