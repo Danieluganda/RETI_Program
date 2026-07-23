@@ -143,21 +143,6 @@ type EsoOption = {
   code: string;
 };
 
-type DatasetOption = {
-  value: string;
-  label: string;
-};
-
-const datasetLabels: Record<string, string> = {
-  participant_csv: "WEO / current participant list",
-  yiw: "Youth in Work (YIW)",
-  enterprise: "Enterprise",
-};
-
-function labelDataset(value: string) {
-  return datasetLabels[value] || value.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
 export function ConsentForm({
   initialFormType = "sample-space",
   lockFormType = false,
@@ -182,8 +167,6 @@ export function ConsentForm({
   const [authorizedPartners, setAuthorizedPartners] = useState<string[]>([partnerOptions[0]]);
   const [interpreterUsed, setInterpreterUsed] = useState(false);
   const [esos, setEsos] = useState<EsoOption[]>([]);
-  const [datasets, setDatasets] = useState<DatasetOption[]>([]);
-  const [selectedDataset, setSelectedDataset] = useState("");
   const [selectedEsoId, setSelectedEsoId] = useState("");
   const [selectedEsoName, setSelectedEsoName] = useState("");
   const [participants, setParticipants] = useState<ParticipantOption[]>([]);
@@ -224,23 +207,6 @@ export function ConsentForm({
   }, [initialEsoId]);
 
   useEffect(() => {
-    let active = true;
-
-    fetch("/api/participants?datasets=1")
-      .then((response) => response.json())
-      .then((data) => {
-        if (!active) return;
-        const values = Array.isArray(data.datasets) ? data.datasets.filter(Boolean) : [];
-        setDatasets(values.map((value: string) => ({ value, label: labelDataset(value) })));
-      })
-      .catch(() => undefined);
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  useEffect(() => {
     if (!initialParticipantId || !selectedEsoName || selectedParticipantId) return;
 
     let active = true;
@@ -277,10 +243,9 @@ export function ConsentForm({
     const controller = new AbortController();
     const timeout = window.setTimeout(() => {
       setParticipantsLoading(true);
-      const datasetParam = selectedDataset ? `&dataset=${encodeURIComponent(selectedDataset)}` : "";
       const params = selectedEsoId
-        ? `esoId=${encodeURIComponent(selectedEsoId)}&q=${encodeURIComponent(query)}&limit=5000${datasetParam}`
-        : `eso=${encodeURIComponent(selectedEsoName)}&q=${encodeURIComponent(query)}&limit=5000${datasetParam}`;
+        ? `esoId=${encodeURIComponent(selectedEsoId)}&q=${encodeURIComponent(query)}&limit=5000`
+        : `eso=${encodeURIComponent(selectedEsoName)}&q=${encodeURIComponent(query)}&limit=5000`;
 
       fetch(`/api/participants?${params}`, { signal: controller.signal })
         .then((response) => response.json())
@@ -299,7 +264,7 @@ export function ConsentForm({
       controller.abort();
       window.clearTimeout(timeout);
     };
-  }, [participantSearch, selectedDataset, selectedEsoId, selectedEsoName, selectedParticipantId]);
+  }, [participantSearch, selectedEsoId, selectedEsoName, selectedParticipantId]);
 
   function selectParticipant(participant: ParticipantOption) {
     setSelectedParticipant(participant);
@@ -490,28 +455,6 @@ export function ConsentForm({
           <div>
             <label htmlFor="dataCollectorContact">Data collector contact information</label>
             <input id="dataCollectorContact" name="dataCollectorContact" defaultValue="+256 (0) 392 000 152; info@outbox.africa" required />
-          </div>
-          <div>
-            <label htmlFor="participantDataset">Participant dataset</label>
-            <select
-              id="participantDataset"
-              name="participantDataset"
-              value={selectedDataset}
-              onChange={(event) => {
-                setSelectedDataset(event.target.value);
-                setSelectedParticipant(null);
-                setSelectedParticipantId("");
-                setParticipantSearch("");
-                setParticipants([]);
-              }}
-            >
-              <option value="">All participant datasets</option>
-              {datasets.map((dataset) => (
-                <option key={dataset.value} value={dataset.value}>
-                  {dataset.label}
-                </option>
-              ))}
-            </select>
           </div>
         </section>
 
