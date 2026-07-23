@@ -167,8 +167,6 @@ export function ConsentForm({
   const [authorizedPartners, setAuthorizedPartners] = useState<string[]>([partnerOptions[0]]);
   const [interpreterUsed, setInterpreterUsed] = useState(false);
   const [esos, setEsos] = useState<EsoOption[]>([]);
-  const [datasets, setDatasets] = useState<string[]>([]);
-  const [selectedDataset, setSelectedDataset] = useState("");
   const [selectedEsoId, setSelectedEsoId] = useState("");
   const [selectedEsoName, setSelectedEsoName] = useState("");
   const [participants, setParticipants] = useState<ParticipantOption[]>([]);
@@ -209,25 +207,6 @@ export function ConsentForm({
   }, [initialEsoId]);
 
   useEffect(() => {
-    let active = true;
-    fetch("/api/participants?datasets=1")
-      .then((response) => response.json())
-      .then((data) => {
-        if (!active) return;
-        const loadedDatasets = data.datasets || [];
-        setDatasets(loadedDatasets);
-        setSelectedDataset("");
-      })
-      .catch(() => {
-        if (active) setDatasets([]);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  useEffect(() => {
     if (!initialParticipantId || !selectedEsoName || selectedParticipantId) return;
 
     let active = true;
@@ -264,10 +243,9 @@ export function ConsentForm({
     let active = true;
     const timeout = window.setTimeout(() => {
       setParticipantsLoading(true);
-      const datasetParam = selectedDataset ? `&dataset=${encodeURIComponent(selectedDataset)}` : "";
       const params = selectedEsoId
-        ? `esoId=${encodeURIComponent(selectedEsoId)}&q=${encodeURIComponent(query)}&limit=5000${datasetParam}`
-        : `eso=${encodeURIComponent(selectedEsoName)}&q=${encodeURIComponent(query)}&limit=5000${datasetParam}`;
+        ? `esoId=${encodeURIComponent(selectedEsoId)}&q=${encodeURIComponent(query)}&limit=5000`
+        : `eso=${encodeURIComponent(selectedEsoName)}&q=${encodeURIComponent(query)}&limit=5000`;
 
       fetch(`/api/participants?${params}`)
         .then((response) => response.json())
@@ -286,7 +264,7 @@ export function ConsentForm({
       active = false;
       window.clearTimeout(timeout);
     };
-  }, [participantSearch, selectedDataset, selectedEsoId, selectedEsoName, selectedParticipantId]);
+  }, [participantSearch, selectedEsoId, selectedEsoName, selectedParticipantId]);
 
   function selectParticipant(participant: ParticipantOption) {
     setSelectedParticipant(participant);
@@ -473,34 +451,6 @@ export function ConsentForm({
             </select>
             <input type="hidden" name="esoId" value={selectedEsoId} />
             <input type="hidden" name="esoName" value={selectedEsoName} />
-          </div>
-          <div>
-            <label htmlFor="participantDataset">Participant dataset</label>
-            <select
-              id="participantDataset"
-              value={selectedDataset}
-              onChange={(event) => {
-                setSelectedDataset(event.target.value);
-                setSelectedParticipant(null);
-                setSelectedParticipantId("");
-                setParticipantSearch("");
-                setParticipants([]);
-                setDuplicateConsent(null);
-              }}
-            >
-              <option value="">All participant datasets</option>
-              {datasets.length ? (
-                datasets.map((dataset) => (
-                  <option key={dataset} value={dataset}>
-                    {dataset}
-                  </option>
-                ))
-              ) : (
-                <option value="" disabled>
-                  Loading participant datasets
-                </option>
-              )}
-            </select>
           </div>
           <div>
             <label htmlFor="dataCollectorContact">Data collector contact information</label>
