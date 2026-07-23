@@ -175,7 +175,6 @@ export function ConsentForm({
   const [selectedParticipant, setSelectedParticipant] = useState<ParticipantOption | null>(null);
   const [selectedParticipantId, setSelectedParticipantId] = useState("");
   const [participantSearch, setParticipantSearch] = useState("");
-  const [participantSearchOpen, setParticipantSearchOpen] = useState(false);
   const [participantsLoading, setParticipantsLoading] = useState(false);
   const [duplicateConsent, setDuplicateConsent] = useState<{ referenceNumber: string; participantName: string } | null>(null);
   const template = consentTemplates[consentFormType];
@@ -293,7 +292,6 @@ export function ConsentForm({
     setSelectedParticipant(participant);
     setSelectedParticipantId(participant.id);
     setParticipantSearch("");
-    setParticipantSearchOpen(false);
     setDuplicateConsent(null);
 
     checkDuplicateConsent(participant.id, consentFormType);
@@ -461,7 +459,6 @@ export function ConsentForm({
                 setSelectedParticipant(null);
                 setSelectedParticipantId("");
                 setParticipantSearch("");
-                setParticipantSearchOpen(false);
                 setParticipants([]);
               }}
             >
@@ -681,7 +678,6 @@ export function ConsentForm({
                     setSelectedParticipant(null);
                     setSelectedParticipantId("");
                     setParticipantSearch(selectedParticipant.fullName);
-                    setParticipantSearchOpen(true);
                   }}
                 >
                   Change
@@ -703,39 +699,30 @@ export function ConsentForm({
                   value={participantSearch}
                   onChange={(event) => {
                     setParticipantSearch(event.target.value);
-                    setParticipantSearchOpen(true);
                   }}
-                  onFocus={() => selectedEsoName && setParticipantSearchOpen(true)}
                   disabled={!selectedEsoName || participantsLoading}
-                  required
                 />
-                {participantSearchOpen && selectedEsoName && !participantsLoading && participants.length > 0 && (
-                  <div className="participant-results" role="listbox">
-                    {participants.length > 0 ? (
-                      participants.map((participant) => (
-                        <button
-                          key={participant.id}
-                          type="button"
-                          role="option"
-                          className="participant-result"
-                          onMouseDown={(event) => {
-                            event.preventDefault();
-                            selectParticipant(participant);
-                          }}
-                          onClick={() => {
-                            selectParticipant(participant);
-                          }}
-                        >
-                          <span>{participant.fullName}</span>
-                          <small>
-                            {[participant.phone, participant.externalId].filter(Boolean).join(" | ")}
-                          </small>
-                        </button>
-                      ))
-                    ) : (
-                      <p className="participant-empty">No participant matches your search.</p>
-                    )}
-                  </div>
+                {selectedEsoName && !participantsLoading && participants.length > 0 && (
+                  <select
+                    aria-label="Select participant"
+                    value=""
+                    onChange={(event) => {
+                      const participant = participants.find((item) => item.id === event.target.value);
+                      if (participant) selectParticipant(participant);
+                    }}
+                    required
+                  >
+                    <option value="" disabled>
+                      Select participant
+                    </option>
+                    {participants.map((participant) => (
+                      <option key={participant.id} value={participant.id}>
+                        {participant.fullName}
+                        {participant.phone ? ` - ${participant.phone}` : ""}
+                        {participant.externalId ? ` - ${participant.externalId}` : ""}
+                      </option>
+                    ))}
+                  </select>
                 )}
               </div>
             )}
