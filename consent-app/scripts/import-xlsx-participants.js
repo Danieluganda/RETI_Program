@@ -201,6 +201,19 @@ async function main() {
       continue;
     }
 
+    const headerLikeText = `${fullName} ${esoName} ${externalId}`.toLowerCase();
+    if (
+      headerLikeText.includes("propriétaire") ||
+      headerLikeText.includes("sous-partenaires") ||
+      headerLikeText.includes("identifiant unique") ||
+      headerLikeText.includes("enterprise owner") ||
+      headerLikeText.includes("enterprise unique identifier")
+    ) {
+      skipped += 1;
+      invalid += 1;
+      continue;
+    }
+
     if (seen.has(externalId)) {
       skipped += 1;
       continue;
