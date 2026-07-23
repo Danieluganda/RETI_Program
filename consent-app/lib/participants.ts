@@ -314,27 +314,58 @@ export async function getParticipantsByEsoId(esoId: string, query = "", limit = 
 
   if (!esoId.trim()) return [];
 
-  const participants = await prisma().participant.findMany({
-    where: {
-      esoId,
-      status: "active",
-      ...(dataset ? { source: dataset } : {}),
-      ...(normalizedQuery
-        ? {
-            OR: [
-              { fullName: { contains: normalizedQuery, mode: "insensitive" } },
-              { phone: { contains: normalizedQuery } },
-              { email: { contains: normalizedQuery, mode: "insensitive" } },
-              { externalId: { contains: normalizedQuery, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-    },
-    orderBy: [{ fullName: "asc" }],
-    take,
-  });
+  try {
+    const participants = await prisma().participant.findMany({
+      where: {
+        esoId,
+        status: "active",
+        ...(dataset ? { source: dataset } : {}),
+        ...(normalizedQuery
+          ? {
+              OR: [
+                { fullName: { contains: normalizedQuery, mode: "insensitive" } },
+                { phone: { contains: normalizedQuery } },
+                { email: { contains: normalizedQuery, mode: "insensitive" } },
+                { externalId: { contains: normalizedQuery, mode: "insensitive" } },
+              ],
+            }
+          : {}),
+      },
+      orderBy: [{ fullName: "asc" }],
+      take,
+    });
 
-  return participants.map(toParticipantSummary);
+    return participants.map(toParticipantSummary);
+  } catch (error) {
+    if (!isMissingColumnOrTable(error)) throw error;
+
+    const search = `%${normalizedQuery}%`;
+    const participants = normalizedQuery
+      ? await prisma().$queryRaw<LegacyParticipantRow[]>`
+          SELECT id, "externalId", "fullName", phone, email, "esoName", district, region, sector, status, "createdAt"
+          FROM "Participant"
+          WHERE "esoId" = ${esoId}
+            AND status = 'active'
+            AND (
+              "fullName" ILIKE ${search}
+              OR phone LIKE ${search}
+              OR email ILIKE ${search}
+              OR "externalId" ILIKE ${search}
+            )
+          ORDER BY "fullName" ASC
+          LIMIT ${take}
+        `
+      : await prisma().$queryRaw<LegacyParticipantRow[]>`
+          SELECT id, "externalId", "fullName", phone, email, "esoName", district, region, sector, status, "createdAt"
+          FROM "Participant"
+          WHERE "esoId" = ${esoId}
+            AND status = 'active'
+          ORDER BY "fullName" ASC
+          LIMIT ${take}
+        `;
+
+    return participants.map(toLegacyParticipantSummary);
+  }
 }
 
 export async function getParticipantByIdForSelection(participantId: string, esoIdOrName: string) {
