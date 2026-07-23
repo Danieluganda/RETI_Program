@@ -112,12 +112,11 @@ type LegacyParticipantRow = {
 };
 
 function isMissingColumnOrTable(error: unknown) {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    ["P2021", "P2022"].includes(String((error as { code?: string }).code))
-  );
+  if (typeof error !== "object" || error === null) return false;
+  if ("code" in error && ["P2021", "P2022"].includes(String((error as { code?: string }).code))) return true;
+
+  const message = "message" in error ? String((error as { message?: string }).message || "") : "";
+  return message.includes("Unknown argument `source`") || message.includes("Unknown field `source`");
 }
 
 export function toParticipantSummary(participant: Participant): ParticipantSummary {
@@ -193,11 +192,10 @@ export async function getParticipantsByEso(esoName: string, query = "", limit = 
     const search = `%${normalizedQuery}%`;
     const participants = normalizedQuery
       ? await prisma().$queryRaw<LegacyParticipantRow[]>`
-          SELECT id, "externalId", "fullName", phone, email, "esoName", district, region, sector, status, "createdAt", source
+          SELECT id, "externalId", "fullName", phone, email, "esoName", district, region, sector, status, "createdAt"
           FROM "Participant"
           WHERE "esoName" = ANY(${esoNames})
             AND status = 'active'
-            AND (${dataset} = '' OR source = ${dataset})
             AND (
               "fullName" ILIKE ${search}
               OR phone LIKE ${search}
@@ -207,11 +205,10 @@ export async function getParticipantsByEso(esoName: string, query = "", limit = 
           LIMIT ${take}
         `
       : await prisma().$queryRaw<LegacyParticipantRow[]>`
-          SELECT id, "externalId", "fullName", phone, email, "esoName", district, region, sector, status, "createdAt", source
+          SELECT id, "externalId", "fullName", phone, email, "esoName", district, region, sector, status, "createdAt"
           FROM "Participant"
           WHERE "esoName" = ANY(${esoNames})
             AND status = 'active'
-            AND (${dataset} = '' OR source = ${dataset})
           ORDER BY "fullName" ASC
           LIMIT ${take}
         `;
@@ -252,7 +249,20 @@ export async function getParticipantDatasets() {
     });
     return rows.map((row) => row.source).filter(Boolean);
   } catch (error) {
-    if (!isMissingColumnOrTable(error)) throw error;
+    if (!isMissingColumnOrTable(error)) {
+      try {
+        const rows = await prisma().$queryRaw<Array<{ source: string | null }>>`
+          SELECT DISTINCT source
+          FROM "Participant"
+          WHERE status = 'active'
+          ORDER BY source ASC
+        `;
+        return rows.map((row) => row.source).filter(Boolean);
+      } catch {
+        throw error;
+      }
+    }
+
     return ["participant_csv"];
   }
 }
