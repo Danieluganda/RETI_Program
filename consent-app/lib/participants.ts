@@ -93,6 +93,7 @@ export type ParticipantSummary = {
   sector: string;
   status: string;
   createdAt: string;
+  source: string;
 };
 
 type LegacyParticipantRow = {
@@ -107,6 +108,7 @@ type LegacyParticipantRow = {
   sector: string | null;
   status?: string;
   createdAt?: Date | string;
+  source?: string;
 };
 
 function isMissingColumnOrTable(error: unknown) {
@@ -132,6 +134,7 @@ export function toParticipantSummary(participant: Participant): ParticipantSumma
     sector: participant.sector || "",
     status: participant.status,
     createdAt: participant.createdAt.toISOString(),
+    source: participant.source,
   };
 }
 
@@ -153,10 +156,11 @@ function toLegacyParticipantSummary(participant: LegacyParticipantRow): Particip
         ? participant.createdAt.toISOString()
         : String(participant.createdAt)
       : "",
+    source: participant.source || "participant_csv",
   };
 }
 
-export async function getParticipantsByEso(esoName: string, query = "", limit = 5000) {
+export async function getParticipantsByEso(esoName: string, query = "", limit = 5000, dataset = "") {
   const normalizedEso = normalizeEso(esoName);
   const esoNames = esoSearchNames(esoName);
   const normalizedQuery = normalizeText(query);
@@ -167,6 +171,7 @@ export async function getParticipantsByEso(esoName: string, query = "", limit = 
       where: {
         esoName: { in: esoNames },
         status: "active",
+        ...(dataset ? { source: dataset } : {}),
         ...(normalizedQuery
           ? {
               OR: [
@@ -188,10 +193,11 @@ export async function getParticipantsByEso(esoName: string, query = "", limit = 
     const search = `%${normalizedQuery}%`;
     const participants = normalizedQuery
       ? await prisma().$queryRaw<LegacyParticipantRow[]>`
-          SELECT id, "externalId", "fullName", phone, email, "esoName", district, region, sector
+          SELECT id, "externalId", "fullName", phone, email, "esoName", district, region, sector, status, "createdAt", source
           FROM "Participant"
           WHERE "esoName" = ANY(${esoNames})
             AND status = 'active'
+            AND (${dataset} = '' OR source = ${dataset})
             AND (
               "fullName" ILIKE ${search}
               OR phone LIKE ${search}
@@ -201,10 +207,11 @@ export async function getParticipantsByEso(esoName: string, query = "", limit = 
           LIMIT ${take}
         `
       : await prisma().$queryRaw<LegacyParticipantRow[]>`
-          SELECT id, "externalId", "fullName", phone, email, "esoName", district, region, sector
+          SELECT id, "externalId", "fullName", phone, email, "esoName", district, region, sector, status, "createdAt", source
           FROM "Participant"
           WHERE "esoName" = ANY(${esoNames})
             AND status = 'active'
+            AND (${dataset} = '' OR source = ${dataset})
           ORDER BY "fullName" ASC
           LIMIT ${take}
         `;
@@ -232,6 +239,21 @@ export async function getActiveParticipants() {
     `;
 
     return participants.map(toLegacyParticipantSummary);
+  }
+}
+
+export async function getParticipantDatasets() {
+  try {
+    const rows = await prisma().participant.findMany({
+      where: { status: "active" },
+      distinct: ["source"],
+      orderBy: { source: "asc" },
+      select: { source: true },
+    });
+    return rows.map((row) => row.source).filter(Boolean);
+  } catch (error) {
+    if (!isMissingColumnOrTable(error)) throw error;
+    return ["participant_csv"];
   }
 }
 
@@ -276,7 +298,7 @@ export async function getActiveEsos() {
   }
 }
 
-export async function getParticipantsByEsoId(esoId: string, query = "", limit = 5000) {
+export async function getParticipantsByEsoId(esoId: string, query = "", limit = 5000, dataset = "") {
   const normalizedQuery = normalizeText(query);
   const take = Math.min(Math.max(limit, 1), 5000);
 
@@ -286,6 +308,7 @@ export async function getParticipantsByEsoId(esoId: string, query = "", limit = 
     where: {
       esoId,
       status: "active",
+      ...(dataset ? { source: dataset } : {}),
       ...(normalizedQuery
         ? {
             OR: [

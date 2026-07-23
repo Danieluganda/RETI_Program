@@ -134,6 +134,7 @@ type ParticipantOption = {
   district: string;
   region: string;
   sector: string;
+  source?: string;
 };
 
 type EsoOption = {
@@ -166,17 +167,20 @@ export function ConsentForm({
   const [authorizedPartners, setAuthorizedPartners] = useState<string[]>([partnerOptions[0]]);
   const [interpreterUsed, setInterpreterUsed] = useState(false);
   const [esos, setEsos] = useState<EsoOption[]>([]);
+  const [datasets, setDatasets] = useState<string[]>([]);
+  const [selectedDataset, setSelectedDataset] = useState("");
   const [selectedEsoId, setSelectedEsoId] = useState("");
   const [selectedEsoName, setSelectedEsoName] = useState("");
   const [participants, setParticipants] = useState<ParticipantOption[]>([]);
+  const [selectedParticipant, setSelectedParticipant] = useState<ParticipantOption | null>(null);
   const [selectedParticipantId, setSelectedParticipantId] = useState("");
   const [participantSearch, setParticipantSearch] = useState("");
   const [participantSearchOpen, setParticipantSearchOpen] = useState(false);
   const [participantsLoading, setParticipantsLoading] = useState(false);
+  const [duplicateConsent, setDuplicateConsent] = useState<{ referenceNumber: string; participantName: string } | null>(null);
   const template = consentTemplates[consentFormType];
   const isPartnerConsent = consentFormType === "third-party-data-sharing";
   const dataShared = isPartnerConsent ? partnerServiceData[serviceRequired] : template.dataList;
-  const selectedParticipant = participants.find((participant) => participant.id === selectedParticipantId);
 
   useEffect(() => {
     let active = true;
@@ -204,6 +208,25 @@ export function ConsentForm({
       active = false;
     };
   }, [initialEsoId]);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/participants?datasets=1")
+      .then((response) => response.json())
+      .then((data) => {
+        if (!active) return;
+        const loadedDatasets = data.datasets || [];
+        setDatasets(loadedDatasets);
+        setSelectedDataset("");
+      })
+      .catch(() => {
+        if (active) setDatasets([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!initialParticipantId || !selectedEsoName || selectedParticipantId) return;
@@ -242,9 +265,10 @@ export function ConsentForm({
     let active = true;
     const timeout = window.setTimeout(() => {
       setParticipantsLoading(true);
+      const datasetParam = selectedDataset ? `&dataset=${encodeURIComponent(selectedDataset)}` : "";
       const params = selectedEsoId
-        ? `esoId=${encodeURIComponent(selectedEsoId)}&q=${encodeURIComponent(query)}&limit=5000`
-        : `eso=${encodeURIComponent(selectedEsoName)}&q=${encodeURIComponent(query)}&limit=5000`;
+        ? `esoId=${encodeURIComponent(selectedEsoId)}&q=${encodeURIComponent(query)}&limit=5000${datasetParam}`
+        : `eso=${encodeURIComponent(selectedEsoName)}&q=${encodeURIComponent(query)}&limit=5000${datasetParam}`;
 
       fetch(`/api/participants?${params}`)
         .then((response) => response.json())
@@ -263,13 +287,38 @@ export function ConsentForm({
       active = false;
       window.clearTimeout(timeout);
     };
-  }, [participantSearch, selectedEsoId, selectedEsoName, selectedParticipantId]);
+  }, [participantSearch, selectedDataset, selectedEsoId, selectedEsoName, selectedParticipantId]);
 
   function selectParticipant(participant: ParticipantOption) {
+    setSelectedParticipant(participant);
     setSelectedParticipantId(participant.id);
     setParticipantSearch("");
     setParticipantSearchOpen(false);
+    setDuplicateConsent(null);
+
+    checkDuplicateConsent(participant.id, consentFormType);
   }
+
+  function checkDuplicateConsent(participantId: string, formType: ConsentFormType) {
+    fetch(`/api/consents?participantId=${encodeURIComponent(participantId)}&consentFormType=${encodeURIComponent(formType)}`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.exists && data.consent) {
+          setDuplicateConsent({
+            referenceNumber: data.consent.referenceNumber,
+            participantName: data.consent.participantName,
+          });
+        }
+      })
+      .catch(() => undefined);
+  }
+
+  useEffect(() => {
+    setDuplicateConsent(null);
+    if (selectedParticipantId) {
+      checkDuplicateConsent(selectedParticipantId, consentFormType);
+    }
+  }, [consentFormType, selectedParticipantId]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -311,6 +360,12 @@ export function ConsentForm({
     const data = await response.json();
     if (!response.ok) {
       setMessage(data.error || "Could not save consent.");
+      if (response.status === 409 && data.existingConsent) {
+        setDuplicateConsent({
+          referenceNumber: data.existingConsent.referenceNumber,
+          participantName: data.existingConsent.participantName,
+        });
+      }
       return;
     }
 
@@ -403,6 +458,7 @@ export function ConsentForm({
                 const eso = esos.find((item) => (item.id || item.name) === value);
                 setSelectedEsoId(eso?.id || "");
                 setSelectedEsoName(eso?.name || "");
+                setSelectedParticipant(null);
                 setSelectedParticipantId("");
                 setParticipantSearch("");
                 setParticipantSearchOpen(false);
@@ -420,6 +476,34 @@ export function ConsentForm({
             </select>
             <input type="hidden" name="esoId" value={selectedEsoId} />
             <input type="hidden" name="esoName" value={selectedEsoName} />
+          </div>
+          <div>
+            <label htmlFor="participantDataset">Participant dataset</label>
+            <select
+              id="participantDataset"
+              value={selectedDataset}
+              onChange={(event) => {
+                setSelectedDataset(event.target.value);
+                setSelectedParticipant(null);
+                setSelectedParticipantId("");
+                setParticipantSearch("");
+                setParticipants([]);
+                setDuplicateConsent(null);
+              }}
+            >
+              <option value="">All participant datasets</option>
+              {datasets.length ? (
+                datasets.map((dataset) => (
+                  <option key={dataset} value={dataset}>
+                    {dataset}
+                  </option>
+                ))
+              ) : (
+                <option value="" disabled>
+                  Loading participant datasets
+                </option>
+              )}
+            </select>
           </div>
           <div>
             <label htmlFor="dataCollectorContact">Data collector contact information</label>
@@ -594,6 +678,7 @@ export function ConsentForm({
                   className="secondary compact-button"
                   type="button"
                   onClick={() => {
+                    setSelectedParticipant(null);
                     setSelectedParticipantId("");
                     setParticipantSearch(selectedParticipant.fullName);
                     setParticipantSearchOpen(true);
@@ -656,6 +741,12 @@ export function ConsentForm({
             )}
             {selectedEsoName && !participantsLoading && participants.length > 0 && !selectedParticipant && (
               <p className="field-hint">{participants.length} participants loaded for this ESO. Type to narrow the list.</p>
+            )}
+            {duplicateConsent && (
+              <p className="form-message error">
+                Consent for {duplicateConsent.participantName} has already been submitted under reference{" "}
+                {duplicateConsent.referenceNumber}.
+              </p>
             )}
             {selectedEsoName && !participantsLoading && participantSearch.trim().length >= 2 && participants.length === 0 && !selectedParticipant && (
               <p className="field-hint">No participant matches your search.</p>
@@ -743,8 +834,8 @@ export function ConsentForm({
             <button className="secondary" type="reset">
               Clear form
             </button>
-            <button className="primary" type="submit">
-              Submit completed form
+            <button className="primary" type="submit" disabled={Boolean(duplicateConsent)}>
+              {duplicateConsent ? "Consent already submitted" : "Submit completed form"}
             </button>
           </div>
         </section>

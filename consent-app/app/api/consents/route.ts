@@ -1,12 +1,32 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { getConsents, nextReference, saveConsent, type ConsentRecord } from "@/lib/db";
+import { getConsents, getExistingParticipantConsent, nextReference, saveConsent, type ConsentRecord } from "@/lib/db";
 import { getParticipantForConsent } from "@/lib/participants";
 import { generateConsentPdf } from "@/lib/pdf";
 import { fileUrl, saveDataImage } from "@/lib/storage";
 import { validateConsentPayload, type ConsentPayload } from "@/lib/validation";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const participantId = searchParams.get("participantId") || "";
+  const consentFormType = searchParams.get("consentFormType") || "";
+
+  if (participantId && consentFormType) {
+    const existingConsent = await getExistingParticipantConsent(participantId, consentFormType);
+    return NextResponse.json({
+      exists: Boolean(existingConsent),
+      consent: existingConsent
+        ? {
+            id: existingConsent.id,
+            referenceNumber: existingConsent.referenceNumber,
+            participantName: existingConsent.participantName,
+            consentDate: existingConsent.consentDate,
+            consentFormType: existingConsent.consentFormType,
+          }
+        : null,
+    });
+  }
+
   return NextResponse.json(await getConsents());
 }
 
@@ -23,6 +43,23 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "Selected participant is invalid, inactive, or does not belong to the selected ESO." },
       { status: 422 },
+    );
+  }
+
+  const existingConsent = await getExistingParticipantConsent(participant.id, body.consentFormType || "sample-space");
+  if (existingConsent) {
+    return NextResponse.json(
+      {
+        error: `Consent for ${participant.fullName} has already been submitted.`,
+        existingConsent: {
+          id: existingConsent.id,
+          referenceNumber: existingConsent.referenceNumber,
+          participantName: existingConsent.participantName,
+          consentDate: existingConsent.consentDate,
+          consentFormType: existingConsent.consentFormType,
+        },
+      },
+      { status: 409 },
     );
   }
 

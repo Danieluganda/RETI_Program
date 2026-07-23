@@ -378,3 +378,29 @@ export async function getConsentById(id: string) {
   const records = await getConsents();
   return records.find((record) => record.id === id || record.referenceNumber === id);
 }
+
+export async function getExistingParticipantConsent(participantId: string, consentFormType: string) {
+  if (!participantId.trim()) return undefined;
+
+  if (usePrisma) {
+    const record = await prisma().consent.findFirst({
+      where: {
+        participantId,
+        consentFormType,
+        status: { in: ["locked", "finalized"] },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    return record ? toRecord(record) : undefined;
+  }
+
+  const records = await getConsents();
+  return records
+    .filter(
+      (record) =>
+        record.participantId === participantId &&
+        record.consentFormType === consentFormType &&
+        ["locked", "finalized"].includes(record.status),
+    )
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+}
