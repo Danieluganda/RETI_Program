@@ -1,10 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("email") && !params.has("password")) return;
+
+    params.delete("email");
+    params.delete("password");
+    const nextUrl = params.toString() ? `/login?${params.toString()}` : "/login";
+    window.history.replaceState(null, "", nextUrl);
+    setError("Please enter your login details in the form.");
+  }, []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

@@ -27,6 +27,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ participants: participant ? [participant] : [] });
   }
 
+  if (query.trim().length < 2) {
+    return NextResponse.json({ participants: [] });
+  }
+
   if (esoId.trim()) {
     const participants = await getParticipantsByEsoId(esoId, query, Number.isFinite(limit) ? limit : 5000, dataset);
     return NextResponse.json({ participants });

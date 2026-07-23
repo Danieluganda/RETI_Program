@@ -4,9 +4,7 @@
   "private": true,
   "scripts": {
     "clean:next": "node scripts/clean-next-cache.js",
-    "predev": "node scripts/clean-next-cache.js",
     "dev": "next dev",
-    "prebuild": "node scripts/clean-next-cache.js",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

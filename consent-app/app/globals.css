@@ -326,11 +326,18 @@ button,
   box-shadow: 0 16px 34px rgba(31, 41, 51, 0.18);
 }
 
+.participant-results.inline-results {
+  position: static;
+  margin-top: 6px;
+  box-shadow: none;
+}
+
 .participant-result {
   display: grid;
   width: 100%;
   min-height: 48px;
   justify-items: start;
+  justify-content: stretch;
   border: 0;
   border-bottom: 1px solid var(--line);
   border-radius: 0;
@@ -338,6 +345,12 @@ button,
   color: var(--text);
   padding: 8px 10px;
   text-align: left;
+}
+
+.participant-result span,
+.participant-result small {
+  display: block;
+  width: 100%;
 }
 
 .participant-result:hover,

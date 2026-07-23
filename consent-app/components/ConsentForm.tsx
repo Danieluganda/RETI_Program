@@ -143,6 +143,21 @@ type EsoOption = {
   code: string;
 };
 
+type DatasetOption = {
+  value: string;
+  label: string;
+};
+
+const datasetLabels: Record<string, string> = {
+  participant_csv: "WEO / current participant list",
+  yiw: "Youth in Work (YIW)",
+  enterprise: "Enterprise",
+};
+
+function labelDataset(value: string) {
+  return datasetLabels[value] || value.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 export function ConsentForm({
   initialFormType = "sample-space",
   lockFormType = false,
@@ -167,6 +182,8 @@ export function ConsentForm({
   const [authorizedPartners, setAuthorizedPartners] = useState<string[]>([partnerOptions[0]]);
   const [interpreterUsed, setInterpreterUsed] = useState(false);
   const [esos, setEsos] = useState<EsoOption[]>([]);
+  const [datasets, setDatasets] = useState<DatasetOption[]>([]);
+  const [selectedDataset, setSelectedDataset] = useState("");
   const [selectedEsoId, setSelectedEsoId] = useState("");
   const [selectedEsoName, setSelectedEsoName] = useState("");
   const [participants, setParticipants] = useState<ParticipantOption[]>([]);
@@ -207,6 +224,23 @@ export function ConsentForm({
   }, [initialEsoId]);
 
   useEffect(() => {
+    let active = true;
+
+    fetch("/api/participants?datasets=1")
+      .then((response) => response.json())
+      .then((data) => {
+        if (!active) return;
+        const values = Array.isArray(data.datasets) ? data.datasets.filter(Boolean) : [];
+        setDatasets(values.map((value: string) => ({ value, label: labelDataset(value) })));
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!initialParticipantId || !selectedEsoName || selectedParticipantId) return;
 
     let active = true;
@@ -234,37 +268,38 @@ export function ConsentForm({
   useEffect(() => {
     const query = participantSearch.trim();
 
-    if (!selectedEsoName || selectedParticipantId) {
+    if (!selectedEsoName || selectedParticipantId || query.length < 2) {
       setParticipants([]);
       setParticipantsLoading(false);
       return;
     }
 
-    let active = true;
+    const controller = new AbortController();
     const timeout = window.setTimeout(() => {
       setParticipantsLoading(true);
+      const datasetParam = selectedDataset ? `&dataset=${encodeURIComponent(selectedDataset)}` : "";
       const params = selectedEsoId
-        ? `esoId=${encodeURIComponent(selectedEsoId)}&q=${encodeURIComponent(query)}&limit=5000`
-        : `eso=${encodeURIComponent(selectedEsoName)}&q=${encodeURIComponent(query)}&limit=5000`;
+        ? `esoId=${encodeURIComponent(selectedEsoId)}&q=${encodeURIComponent(query)}&limit=5000${datasetParam}`
+        : `eso=${encodeURIComponent(selectedEsoName)}&q=${encodeURIComponent(query)}&limit=5000${datasetParam}`;
 
-      fetch(`/api/participants?${params}`)
+      fetch(`/api/participants?${params}`, { signal: controller.signal })
         .then((response) => response.json())
         .then((data) => {
-          if (active) setParticipants(data.participants || []);
+          setParticipants(data.participants || []);
         })
-        .catch(() => {
-          if (active) setParticipants([]);
+        .catch((error) => {
+          if (error.name !== "AbortError") setParticipants([]);
         })
         .finally(() => {
-          if (active) setParticipantsLoading(false);
+          setParticipantsLoading(false);
         });
     }, 300);
 
     return () => {
-      active = false;
+      controller.abort();
       window.clearTimeout(timeout);
     };
-  }, [participantSearch, selectedEsoId, selectedEsoName, selectedParticipantId]);
+  }, [participantSearch, selectedDataset, selectedEsoId, selectedEsoName, selectedParticipantId]);
 
   function selectParticipant(participant: ParticipantOption) {
     setSelectedParticipant(participant);
@@ -456,6 +491,28 @@ export function ConsentForm({
             <label htmlFor="dataCollectorContact">Data collector contact information</label>
             <input id="dataCollectorContact" name="dataCollectorContact" defaultValue="+256 (0) 392 000 152; info@outbox.africa" required />
           </div>
+          <div>
+            <label htmlFor="participantDataset">Participant dataset</label>
+            <select
+              id="participantDataset"
+              name="participantDataset"
+              value={selectedDataset}
+              onChange={(event) => {
+                setSelectedDataset(event.target.value);
+                setSelectedParticipant(null);
+                setSelectedParticipantId("");
+                setParticipantSearch("");
+                setParticipants([]);
+              }}
+            >
+              <option value="">All participant datasets</option>
+              {datasets.map((dataset) => (
+                <option key={dataset.value} value={dataset.value}>
+                  {dataset.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </section>
 
         {isPartnerConsent && (
@@ -641,43 +698,40 @@ export function ConsentForm({
                   autoComplete="off"
                   placeholder={
                     participantsLoading
-                      ? "Loading participants..."
+                      ? "Searching participants..."
                       : selectedEsoName
-                        ? "Search or scroll participant list"
+                        ? "Search participant by name or phone"
                         : "Select ESO first"
                   }
                   value={participantSearch}
                   onChange={(event) => {
                     setParticipantSearch(event.target.value);
                   }}
-                  disabled={!selectedEsoName || participantsLoading}
+                  disabled={!selectedEsoName}
                 />
-                {selectedEsoName && !participantsLoading && participants.length > 0 && (
-                  <select
-                    aria-label="Select participant"
-                    value=""
-                    onChange={(event) => {
-                      const participant = participants.find((item) => item.id === event.target.value);
-                      if (participant) selectParticipant(participant);
-                    }}
-                    required
-                  >
-                    <option value="" disabled>
-                      Select participant
-                    </option>
-                    {participants.map((participant) => (
-                      <option key={participant.id} value={participant.id}>
-                        {participant.fullName}
-                        {participant.phone ? ` - ${participant.phone}` : ""}
-                        {participant.externalId ? ` - ${participant.externalId}` : ""}
-                      </option>
+                {selectedEsoName && participantSearch.trim().length >= 2 && participants.length > 0 && (
+                  <div className="participant-results inline-results" role="listbox" aria-label="Matching participants">
+                    {participants.slice(0, 25).map((participant) => (
+                      <button
+                        key={participant.id}
+                        type="button"
+                        role="option"
+                        className="participant-result"
+                        onClick={() => selectParticipant(participant)}
+                      >
+                        <span>{participant.fullName}</span>
+                        <small>{[participant.phone, participant.externalId].filter(Boolean).join(" | ")}</small>
+                      </button>
                     ))}
-                  </select>
+                  </div>
                 )}
               </div>
             )}
-            {selectedEsoName && !participantsLoading && participants.length > 0 && !selectedParticipant && (
-              <p className="field-hint">{participants.length} participants loaded for this ESO. Type to narrow the list.</p>
+              {selectedEsoName && participantSearch.trim().length >= 2 && !participantsLoading && participants.length > 0 && !selectedParticipant && (
+              <p className="field-hint">
+                Showing {Math.min(participants.length, 25)} of {participants.length} matches.{" "}
+                {participantsLoading ? "Searching..." : "Type to narrow the list."}
+              </p>
             )}
             {duplicateConsent && (
               <p className="form-message error">
