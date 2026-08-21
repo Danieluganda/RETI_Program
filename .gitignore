@@ -1,5 +1,6 @@
 node_modules/
 .next/
+.next-dev/
 out/
 dist/
 
@@ -9,6 +10,7 @@ dist/
 
 *.log
 *.zip
+*.tsbuildinfo
 appservice-logs*/
 dev.out.log
 dev.err.log

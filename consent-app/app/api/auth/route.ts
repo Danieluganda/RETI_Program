@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { validateLogin } from "@/lib/auth";
+import { userToken, validateLogin } from "@/lib/auth";
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -9,8 +9,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
   }
 
-  const response = NextResponse.json({ user, token: `demo-token-${user.id}` });
-  response.cookies.set("consent_auth", `demo-token-${user.id}`, {
+  const response = NextResponse.json({ user, token: userToken(user.id) });
+  response.cookies.set("consent_auth", userToken(user.id), {
     httpOnly: true,
     sameSite: "lax",
     path: "/",

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { getConsentById } from "@/lib/db";
+import { consentRecordedAt, formatConsentDateTime } from "@/lib/dateTime";
 
 export default async function ConsentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -31,7 +32,7 @@ export default async function ConsentDetailPage({ params }: { params: Promise<{ 
           <strong>Entrepreneur Support Organization (ESO):</strong> {record.esoName || "N/A"}
         </p>
         <p>
-          <strong>Date:</strong> {record.consentDate}
+          <strong>Consent Date &amp; Time:</strong> {formatConsentDateTime(consentRecordedAt(record))}
         </p>
         <p>
           <strong>Collector:</strong> {record.collectorName}
@@ -40,11 +41,43 @@ export default async function ConsentDetailPage({ params }: { params: Promise<{ 
           <strong>Status:</strong> {record.status}
         </p>
         <p>
+          <strong>Automated verification:</strong> {record.verificationStatus || "auto_verified"}
+        </p>
+        <p>
+          <strong>Risk score:</strong> {record.riskScore || 0}
+        </p>
+        <p>
+          <strong>Risk flags:</strong> {record.riskFlags.length ? record.riskFlags.join(", ") : "None"}
+        </p>
+        <p>
+          <strong>Verification checked at:</strong> {record.verificationCheckedAt || "N/A"}
+        </p>
+        <p>
           <strong>Consent form version:</strong> {record.consentFormVersion}
         </p>
         <p>
           <strong>Consent form type:</strong> {record.consentFormType}
         </p>
+        {record.consentFormType === "sample-space" && (
+          <>
+            <p>
+              <strong>GPS status:</strong> {record.geoCaptureStatus || "not_requested"}
+            </p>
+            {record.geoCaptureStatus === "captured" && (
+              <>
+                <p>
+                  <strong>GPS coordinates:</strong> {record.geoLatitude}, {record.geoLongitude}
+                </p>
+                <p>
+                  <strong>GPS accuracy:</strong> {record.geoAccuracy === null ? "N/A" : `${Math.round(record.geoAccuracy)}m`}
+                </p>
+                <p>
+                  <strong>GPS captured at:</strong> {record.geoCapturedAt || "N/A"}
+                </p>
+              </>
+            )}
+          </>
+        )}
         {record.consentFormType === "third-party-data-sharing" && (
           <>
             <p>
@@ -60,6 +93,16 @@ export default async function ConsentDetailPage({ params }: { params: Promise<{ 
         )}
         <p>
           <strong>PDF generated at:</strong> {record.pdfGeneratedAt}
+        </p>
+        <p>
+          <strong>Submitted at:</strong> {record.auditSubmittedAt || "N/A"}
+        </p>
+        <p>
+          <strong>Server received at:</strong> {record.auditServerReceivedAt || "N/A"}
+        </p>
+        <p>
+          <strong>Digital footprint:</strong>{" "}
+          {[record.auditTimezone, record.auditLanguage, record.auditRequestHost].filter(Boolean).join(" | ") || "N/A"}
         </p>
         {record.signatureFile && (
           <p>

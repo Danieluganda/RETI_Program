@@ -143,6 +143,26 @@ type EsoOption = {
   code: string;
 };
 
+type GeoCaptureStatus = "not_requested" | "capturing" | "captured" | "denied" | "unavailable" | "error";
+
+type GeoMetadata = {
+  status: GeoCaptureStatus;
+  latitude: number | null;
+  longitude: number | null;
+  accuracy: number | null;
+  capturedAt: string;
+  error: string;
+};
+
+type ClientAuditMetadata = {
+  formOpenedAt: string;
+  timezone: string;
+  language: string;
+  userAgent: string;
+  screenWidth: number | null;
+  screenHeight: number | null;
+};
+
 export function ConsentForm({
   initialFormType = "sample-space",
   lockFormType = false,
@@ -177,7 +197,24 @@ export function ConsentForm({
   const [duplicateConsent, setDuplicateConsent] = useState<{ referenceNumber: string; participantName: string } | null>(null);
   const template = consentTemplates[consentFormType];
   const isPartnerConsent = consentFormType === "third-party-data-sharing";
+  const isSampleSpaceConsent = consentFormType === "sample-space";
   const dataShared = isPartnerConsent ? partnerServiceData[serviceRequired] : template.dataList;
+  const [geoMetadata, setGeoMetadata] = useState<GeoMetadata>({
+    status: "not_requested",
+    latitude: null,
+    longitude: null,
+    accuracy: null,
+    capturedAt: "",
+    error: "",
+  });
+  const [clientAudit, setClientAudit] = useState<ClientAuditMetadata>({
+    formOpenedAt: "",
+    timezone: "",
+    language: "",
+    userAgent: "",
+    screenWidth: null,
+    screenHeight: null,
+  });
 
   useEffect(() => {
     let active = true;
@@ -205,6 +242,17 @@ export function ConsentForm({
       active = false;
     };
   }, [initialEsoId]);
+
+  useEffect(() => {
+    setClientAudit({
+      formOpenedAt: new Date().toISOString(),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
+      language: navigator.language || "",
+      userAgent: navigator.userAgent || "",
+      screenWidth: window.screen?.width || null,
+      screenHeight: window.screen?.height || null,
+    });
+  }, []);
 
   useEffect(() => {
     if (!initialParticipantId || !selectedEsoName || selectedParticipantId) return;
@@ -289,6 +337,47 @@ export function ConsentForm({
       .catch(() => undefined);
   }
 
+  function captureGeoLocation() {
+    if (!navigator.geolocation) {
+      setGeoMetadata({
+        status: "unavailable",
+        latitude: null,
+        longitude: null,
+        accuracy: null,
+        capturedAt: new Date().toISOString(),
+        error: "Geolocation is not supported by this device or browser.",
+      });
+      return;
+    }
+
+    setGeoMetadata((current) => ({ ...current, status: "capturing", error: "" }));
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setGeoMetadata({
+          status: "captured",
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+          capturedAt: new Date(position.timestamp || Date.now()).toISOString(),
+          error: "",
+        });
+      },
+      (error) => {
+        const denied = error.code === error.PERMISSION_DENIED;
+        setGeoMetadata({
+          status: denied ? "denied" : "error",
+          latitude: null,
+          longitude: null,
+          accuracy: null,
+          capturedAt: new Date().toISOString(),
+          error: error.message || (denied ? "Location permission was denied." : "Location could not be captured."),
+        });
+      },
+      { enableHighAccuracy: true, maximumAge: 60_000, timeout: 15_000 },
+    );
+  }
+
   useEffect(() => {
     setDuplicateConsent(null);
     if (selectedParticipantId) {
@@ -326,6 +415,20 @@ export function ConsentForm({
         interpreterLanguage: body.language,
         interpreterName: body.interpreterName || body.interpreterSignatureName,
         signingMethod,
+        geoCaptureStatus: isSampleSpaceConsent ? geoMetadata.status : "not_requested",
+        geoLatitude: isSampleSpaceConsent && geoMetadata.latitude !== null ? geoMetadata.latitude : null,
+        geoLongitude: isSampleSpaceConsent && geoMetadata.longitude !== null ? geoMetadata.longitude : null,
+        geoAccuracy: isSampleSpaceConsent && geoMetadata.accuracy !== null ? geoMetadata.accuracy : null,
+        geoCapturedAt: isSampleSpaceConsent ? geoMetadata.capturedAt : "",
+        geoCaptureError: isSampleSpaceConsent ? geoMetadata.error : "",
+        auditFormOpenedAt: clientAudit.formOpenedAt,
+        auditSubmittedAt: new Date().toISOString(),
+        auditTimezone: clientAudit.timezone,
+        auditLanguage: clientAudit.language,
+        auditUserAgent: clientAudit.userAgent,
+        auditScreenWidth: clientAudit.screenWidth,
+        auditScreenHeight: clientAudit.screenHeight,
+        auditSubmissionPath: window.location.pathname,
         participantSignatureData: participantSignature,
         interpreterSignatureData: interpreterSignature,
         consentDate: body.participantDate || today,
@@ -708,6 +811,29 @@ export function ConsentForm({
               }}
             />
           </div>
+          {isSampleSpaceConsent && (
+            <div className="geo-capture">
+              <div>
+                <label>GPS metadata</label>
+                <p className="field-hint">
+                  {geoMetadata.status === "captured"
+                    ? `Location captured with ${Math.round(geoMetadata.accuracy || 0)}m accuracy.`
+                    : geoMetadata.status === "capturing"
+                      ? "Capturing location..."
+                      : geoMetadata.status === "denied"
+                        ? "Location permission was denied."
+                        : geoMetadata.status === "unavailable"
+                          ? "Location is not available on this device."
+                          : geoMetadata.status === "error"
+                            ? "Location could not be captured."
+                            : "No location captured yet."}
+                </p>
+              </div>
+              <button className="secondary compact-button" type="button" onClick={captureGeoLocation}>
+                {geoMetadata.status === "capturing" ? "Capturing..." : "Capture GPS"}
+              </button>
+            </div>
+          )}
         </section>
 
         <section className="section">

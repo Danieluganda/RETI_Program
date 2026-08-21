@@ -56,6 +56,27 @@ model Consent {
   collector                User?    @relation(fields: [collectorId], references: [id])
   consentDate              DateTime
   consentFormVersion       String   @default("10X-SAMPLE-v1")
+  geoCaptureStatus         String   @default("not_requested")
+  geoLatitude              Float?
+  geoLongitude             Float?
+  geoAccuracy              Float?
+  geoCapturedAt            DateTime?
+  geoCaptureError          String?
+  auditFormOpenedAt        DateTime?
+  auditSubmittedAt         DateTime?
+  auditServerReceivedAt    DateTime?
+  auditTimezone            String?
+  auditLanguage            String?
+  auditUserAgent           String?
+  auditIpAddress           String?
+  auditScreenWidth         Float?
+  auditScreenHeight        Float?
+  auditSubmissionPath      String?
+  auditRequestHost         String?
+  verificationStatus       String   @default("auto_verified")
+  riskScore                Int      @default(0)
+  riskFlags                String[] @default([])
+  verificationCheckedAt    DateTime?
   pdfFile                  String?
   pdfFileKey               String?
   pdfGeneratedAt           DateTime?
@@ -69,6 +90,7 @@ model Consent {
   @@index([consentDecision])
   @@index([status])
   @@index([pdfStatus])
+  @@index([verificationStatus])
   @@index([createdAt])
 }
 

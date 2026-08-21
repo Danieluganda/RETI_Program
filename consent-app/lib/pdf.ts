@@ -295,15 +295,60 @@ function agreementText(record: ConsentRecord) {
   return `I agree to share my data with ${fieldValue(record.dataSharingOrganization, "Outbox")} and Mastercard Foundation as well as any third-party data processors they may use for the purposes described above.`;
 }
 
+function geoMetadataRows(record: ConsentRecord): Array<[string, string]> {
+  const status = record.geoCaptureStatus || "not_requested";
+  const rows: Array<[string, string]> = [["GPS capture status", status]];
+
+  if (status === "captured") {
+    rows.push(
+      ["GPS latitude", record.geoLatitude === null ? "N/A" : String(record.geoLatitude)],
+      ["GPS longitude", record.geoLongitude === null ? "N/A" : String(record.geoLongitude)],
+      ["GPS accuracy", record.geoAccuracy === null ? "N/A" : `${Math.round(record.geoAccuracy)} meters`],
+      ["GPS captured at", fieldValue(record.geoCapturedAt)],
+    );
+  } else if (record.geoCaptureError) {
+    rows.push(["GPS capture note", record.geoCaptureError]);
+  }
+
+  return rows;
+}
+
+function auditMetadataRows(record: ConsentRecord): Array<[string, string]> {
+  return [
+    ["PDF generated at", fieldValue(record.pdfGeneratedAt)],
+    ["Form opened at", fieldValue(record.auditFormOpenedAt)],
+    ["Submitted at", fieldValue(record.auditSubmittedAt)],
+    ["Server received at", fieldValue(record.auditServerReceivedAt)],
+    ["Automated verification", fieldValue(record.verificationStatus || "auto_verified")],
+    ["Risk score", String(record.riskScore || 0)],
+    ["Risk flags", record.riskFlags.length ? record.riskFlags.join(", ") : "None"],
+    ["Verification checked at", fieldValue(record.verificationCheckedAt)],
+    ["Collector timezone", fieldValue(record.auditTimezone)],
+    ["Browser language", fieldValue(record.auditLanguage)],
+    ["Submission path", fieldValue(record.auditSubmissionPath)],
+    ["Request host", fieldValue(record.auditRequestHost)],
+    ["Source IP", fieldValue(record.auditIpAddress)],
+    ["Screen size", record.auditScreenWidth && record.auditScreenHeight ? `${record.auditScreenWidth} x ${record.auditScreenHeight}` : "N/A"],
+  ];
+}
+
 export async function generateConsentPdf(record: ConsentRecord) {
-  const generatedAt = new Date().toISOString();
+  const generatedAt = record.pdfGeneratedAt || new Date().toISOString();
   const referenceParts = record.signatureFileKey.split("/").slice(0, 4);
   const folderKey = referenceParts.length === 4 ? referenceParts.join("/") : consentFolderKey(record.referenceNumber);
 
   const pdfDoc = await PDFDocument.create();
   pdfDoc.setTitle(`${titleFor(record)} - ${record.referenceNumber}`);
-  pdfDoc.setSubject(`Consent reference ${record.referenceNumber}; status ${record.status}; version ${record.consentFormVersion}`);
-  pdfDoc.setKeywords(["10X Program", record.referenceNumber, record.consentFormVersion, record.status]);
+  pdfDoc.setSubject(
+    `Consent reference ${record.referenceNumber}; status ${record.status}; version ${record.consentFormVersion}; GPS ${record.geoCaptureStatus || "not_requested"}`,
+  );
+  pdfDoc.setKeywords([
+    "10X Program",
+    record.referenceNumber,
+    record.consentFormVersion,
+    record.status,
+    `gps:${record.geoCaptureStatus || "not_requested"}`,
+  ]);
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const signFont = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
@@ -404,6 +449,12 @@ export async function generateConsentPdf(record: ConsentRecord) {
       ["Interpreter name", fieldValue(record.interpreterName, "")],
     ]);
     drawImageBox(ctx, "Interpreter signature", interpreterImage, record.interpreterName);
+  }
+
+  if (!isPartner(record)) {
+    section(ctx, "Form Metadata");
+    fieldGrid(ctx, geoMetadataRows(record));
+    fieldStack(ctx, auditMetadataRows(record));
   }
 
   const pdfBytes = await pdfDoc.save();

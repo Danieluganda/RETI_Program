@@ -39,6 +39,27 @@ export type ConsentRecord = {
   collectorId: string;
   consentDate: string;
   consentFormVersion: string;
+  geoCaptureStatus: string;
+  geoLatitude: number | null;
+  geoLongitude: number | null;
+  geoAccuracy: number | null;
+  geoCapturedAt: string;
+  geoCaptureError: string;
+  auditFormOpenedAt: string;
+  auditSubmittedAt: string;
+  auditServerReceivedAt: string;
+  auditTimezone: string;
+  auditLanguage: string;
+  auditUserAgent: string;
+  auditIpAddress: string;
+  auditScreenWidth: number | null;
+  auditScreenHeight: number | null;
+  auditSubmissionPath: string;
+  auditRequestHost: string;
+  verificationStatus: string;
+  riskScore: number;
+  riskFlags: string[];
+  verificationCheckedAt: string;
   pdfFile: string;
   pdfFileKey: string;
   pdfGeneratedAt: string;
@@ -124,6 +145,27 @@ function toLegacyRecord(record: LegacyConsentRow): ConsentRecord {
     collectorId: record.collectorId || "",
     consentDate: formatDateOnly(record.consentDate),
     consentFormVersion: record.consentFormVersion,
+    geoCaptureStatus: "not_requested",
+    geoLatitude: null,
+    geoLongitude: null,
+    geoAccuracy: null,
+    geoCapturedAt: "",
+    geoCaptureError: "",
+    auditFormOpenedAt: "",
+    auditSubmittedAt: "",
+    auditServerReceivedAt: "",
+    auditTimezone: "",
+    auditLanguage: "",
+    auditUserAgent: "",
+    auditIpAddress: "",
+    auditScreenWidth: null,
+    auditScreenHeight: null,
+    auditSubmissionPath: "",
+    auditRequestHost: "",
+    verificationStatus: "auto_verified",
+    riskScore: 0,
+    riskFlags: [],
+    verificationCheckedAt: "",
     pdfFile: record.pdfFile || "",
     pdfFileKey: record.pdfFileKey || "",
     pdfGeneratedAt: formatDateTime(record.pdfGeneratedAt),
@@ -245,6 +287,27 @@ function toRecord(record: Consent): ConsentRecord {
     collectorId: record.collectorId || "",
     consentDate: record.consentDate.toISOString().slice(0, 10),
     consentFormVersion: record.consentFormVersion,
+    geoCaptureStatus: record.geoCaptureStatus || "not_requested",
+    geoLatitude: record.geoLatitude,
+    geoLongitude: record.geoLongitude,
+    geoAccuracy: record.geoAccuracy,
+    geoCapturedAt: record.geoCapturedAt?.toISOString() || "",
+    geoCaptureError: record.geoCaptureError || "",
+    auditFormOpenedAt: record.auditFormOpenedAt?.toISOString() || "",
+    auditSubmittedAt: record.auditSubmittedAt?.toISOString() || "",
+    auditServerReceivedAt: record.auditServerReceivedAt?.toISOString() || "",
+    auditTimezone: record.auditTimezone || "",
+    auditLanguage: record.auditLanguage || "",
+    auditUserAgent: record.auditUserAgent || "",
+    auditIpAddress: record.auditIpAddress || "",
+    auditScreenWidth: record.auditScreenWidth,
+    auditScreenHeight: record.auditScreenHeight,
+    auditSubmissionPath: record.auditSubmissionPath || "",
+    auditRequestHost: record.auditRequestHost || "",
+    verificationStatus: record.verificationStatus || "auto_verified",
+    riskScore: record.riskScore || 0,
+    riskFlags: record.riskFlags || [],
+    verificationCheckedAt: record.verificationCheckedAt?.toISOString() || "",
     pdfFile: record.pdfFile || "",
     pdfFileKey: record.pdfFileKey || "",
     pdfGeneratedAt: record.pdfGeneratedAt?.toISOString() || "",
@@ -315,6 +378,27 @@ export async function saveConsent(record: ConsentRecord) {
         collectorId: null,
         consentDate: new Date(record.consentDate),
         consentFormVersion: record.consentFormVersion,
+        geoCaptureStatus: record.geoCaptureStatus,
+        geoLatitude: record.geoLatitude,
+        geoLongitude: record.geoLongitude,
+        geoAccuracy: record.geoAccuracy,
+        geoCapturedAt: record.geoCapturedAt ? new Date(record.geoCapturedAt) : null,
+        geoCaptureError: record.geoCaptureError,
+        auditFormOpenedAt: record.auditFormOpenedAt ? new Date(record.auditFormOpenedAt) : null,
+        auditSubmittedAt: record.auditSubmittedAt ? new Date(record.auditSubmittedAt) : null,
+        auditServerReceivedAt: record.auditServerReceivedAt ? new Date(record.auditServerReceivedAt) : null,
+        auditTimezone: record.auditTimezone,
+        auditLanguage: record.auditLanguage,
+        auditUserAgent: record.auditUserAgent,
+        auditIpAddress: record.auditIpAddress,
+        auditScreenWidth: record.auditScreenWidth,
+        auditScreenHeight: record.auditScreenHeight,
+        auditSubmissionPath: record.auditSubmissionPath,
+        auditRequestHost: record.auditRequestHost,
+        verificationStatus: record.verificationStatus,
+        riskScore: record.riskScore,
+        riskFlags: record.riskFlags,
+        verificationCheckedAt: record.verificationCheckedAt ? new Date(record.verificationCheckedAt) : null,
         pdfFile: record.pdfFile,
         pdfFileKey: record.pdfFileKey,
         pdfGeneratedAt: record.pdfGeneratedAt ? new Date(record.pdfGeneratedAt) : null,

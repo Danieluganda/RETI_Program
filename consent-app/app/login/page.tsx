@@ -39,8 +39,9 @@ export default function LoginPage() {
       return;
     }
 
-    const next = new URLSearchParams(window.location.search).get("next") || "/dashboard";
-    window.location.href = next.startsWith("/") ? next : "/dashboard";
+    const result = await response.json();
+    const next = new URLSearchParams(window.location.search).get("next") || result.user?.homePath || "/dashboard";
+    window.location.href = next.startsWith("/") ? next : result.user?.homePath || "/dashboard";
   }
 
   return (

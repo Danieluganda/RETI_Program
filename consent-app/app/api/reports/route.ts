@@ -1,4 +1,5 @@
 import { getConsents } from "@/lib/db";
+import { consentRecordedAt, formatConsentDateTime } from "@/lib/dateTime";
 
 export const dynamic = "force-dynamic";
 
@@ -26,12 +27,41 @@ export async function GET() {
     "interpreterLanguage",
     "collectorName",
     "consentDate",
+    "consentDateTime",
+    "geoCaptureStatus",
+    "geoLatitude",
+    "geoLongitude",
+    "geoAccuracy",
+    "geoCapturedAt",
+    "geoCaptureError",
+    "auditFormOpenedAt",
+    "auditSubmittedAt",
+    "auditServerReceivedAt",
+    "auditTimezone",
+    "auditLanguage",
+    "auditUserAgent",
+    "auditIpAddress",
+    "auditScreenWidth",
+    "auditScreenHeight",
+    "auditSubmissionPath",
+    "auditRequestHost",
+    "verificationStatus",
+    "riskScore",
+    "riskFlags",
+    "verificationCheckedAt",
     "pdfFileKey",
     "pdfGeneratedAt",
     "status",
     "createdAt",
   ];
-  const rows = records.map((record) => headers.map((header) => cell(record[header as keyof typeof record])).join(","));
+  const rows = records.map((record) =>
+    headers
+      .map((header) => {
+        if (header === "consentDateTime") return cell(formatConsentDateTime(consentRecordedAt(record)));
+        return cell(record[header as keyof typeof record]);
+      })
+      .join(","),
+  );
   const csv = [headers.join(","), ...rows].join("\n");
 
   return new Response(csv, {

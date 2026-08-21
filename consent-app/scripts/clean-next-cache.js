@@ -2,10 +2,12 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const appRoot = process.cwd();
-const nextDir = path.resolve(appRoot, ".next");
+const nextDirs = [".next", ".next-dev"].map((dir) => path.resolve(appRoot, dir));
 
-if (!nextDir.startsWith(appRoot)) {
-  throw new Error(`Refusing to remove path outside app root: ${nextDir}`);
+for (const nextDir of nextDirs) {
+  if (!nextDir.startsWith(appRoot)) {
+    throw new Error(`Refusing to remove path outside app root: ${nextDir}`);
+  }
+
+  fs.rmSync(nextDir, { recursive: true, force: true });
 }
-
-fs.rmSync(nextDir, { recursive: true, force: true });

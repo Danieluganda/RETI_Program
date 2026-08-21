@@ -18,6 +18,9 @@ export default async function RecordsPage() {
           <a className="button secondary" href="/api/reports">
             Download CSV
           </a>
+          <a className="button secondary" href="/api/exports/richblack">
+            Export Richblack consented data
+          </a>
           <a className="button primary" href="/api/exports/pdfs">
             Export all PDFs
           </a>

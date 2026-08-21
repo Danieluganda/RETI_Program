@@ -1,5 +1,6 @@
 import type { ConsentRecord } from "./db";
 import type { ParticipantSummary } from "./participants";
+import { consentRecordedAt } from "./dateTime";
 
 export type DashboardFilters = {
   eso?: string;
@@ -142,6 +143,7 @@ export function getEsoProgress(participants: ParticipantSummary[], records: Cons
       pending: number;
       coverage: number;
       lastConsentDate: string;
+      lastConsentAt: string;
     }
   >();
 
@@ -155,6 +157,7 @@ export function getEsoProgress(participants: ParticipantSummary[], records: Cons
         pending: 0,
         coverage: 0,
         lastConsentDate: "",
+        lastConsentAt: "",
       });
     }
     esoMap.get(participant.esoName)!.totalParticipants += 1;
@@ -163,12 +166,16 @@ export function getEsoProgress(participants: ParticipantSummary[], records: Cons
   currentConsents.forEach((record) => {
     const eso = record.esoName || "Unassigned";
     if (!esoMap.has(eso)) {
-      esoMap.set(eso, { eso, totalParticipants: 0, consented: 0, declined: 0, pending: 0, coverage: 0, lastConsentDate: "" });
+      esoMap.set(eso, { eso, totalParticipants: 0, consented: 0, declined: 0, pending: 0, coverage: 0, lastConsentDate: "", lastConsentAt: "" });
     }
     const row = esoMap.get(eso)!;
     if (record.consentDecision === "consented") row.consented += 1;
     if (record.consentDecision === "declined") row.declined += 1;
-    if (!row.lastConsentDate || record.consentDate > row.lastConsentDate) row.lastConsentDate = record.consentDate;
+    const recordedAt = consentRecordedAt(record);
+    if (!row.lastConsentAt || new Date(recordedAt).getTime() > new Date(row.lastConsentAt).getTime()) {
+      row.lastConsentDate = record.consentDate;
+      row.lastConsentAt = recordedAt;
+    }
   });
 
   return [...esoMap.values()]

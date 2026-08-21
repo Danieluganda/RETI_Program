@@ -29,6 +29,20 @@ export type ConsentPayload = {
   interpreterSignatureData?: string;
   collectorName?: string;
   consentDate?: string;
+  geoCaptureStatus?: "not_requested" | "capturing" | "captured" | "denied" | "unavailable" | "error";
+  geoLatitude?: number | string | null;
+  geoLongitude?: number | string | null;
+  geoAccuracy?: number | string | null;
+  geoCapturedAt?: string;
+  geoCaptureError?: string;
+  auditFormOpenedAt?: string;
+  auditSubmittedAt?: string;
+  auditTimezone?: string;
+  auditLanguage?: string;
+  auditUserAgent?: string;
+  auditScreenWidth?: number | string | null;
+  auditScreenHeight?: number | string | null;
+  auditSubmissionPath?: string;
 };
 
 export function validateConsentPayload(payload: ConsentPayload) {

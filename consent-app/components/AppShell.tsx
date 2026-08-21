@@ -1,6 +1,8 @@
 import Link from "next/link";
-import { demoUser } from "@/lib/auth";
+import { authUsers } from "@/lib/auth";
 import { LogoutButton } from "./LogoutButton";
+
+const demoUser = authUsers[0];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +18,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/consent/partner">Partner Consent</Link>
           <Link href="/records">Consent Records</Link>
           <Link href="/participants/pending">Pending Participants</Link>
+          <Link href="/richblack">Richblack Gate</Link>
+          <Link href="/busala">Busala Gate</Link>
+          <Link href="/uncdf">UNCDF Gate</Link>
         </nav>
         <div className="sidebar-user">
           <strong>{demoUser.name}</strong>

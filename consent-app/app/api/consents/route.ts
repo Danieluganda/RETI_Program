@@ -3,8 +3,26 @@ import { NextResponse } from "next/server";
 import { getConsents, getExistingParticipantConsent, nextReference, saveConsent, type ConsentRecord } from "@/lib/db";
 import { getParticipantForConsent } from "@/lib/participants";
 import { generateConsentPdf } from "@/lib/pdf";
+import { scoreConsentRisk } from "@/lib/riskScoring";
 import { fileUrl, saveDataImage } from "@/lib/storage";
 import { validateConsentPayload, type ConsentPayload } from "@/lib/validation";
+
+const geoStatuses = new Set(["not_requested", "captured", "denied", "unavailable", "error"]);
+
+function optionalNumber(value: ConsentPayload["geoLatitude"]) {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function geoStatus(value: ConsentPayload["geoCaptureStatus"]) {
+  return value && geoStatuses.has(value) ? value : "not_requested";
+}
+
+function requestIp(request: Request) {
+  const forwardedFor = request.headers.get("x-forwarded-for") || "";
+  return forwardedFor.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "";
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -32,6 +50,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const body = (await request.json()) as ConsentPayload;
+  const serverSubmittedAt = new Date().toISOString();
   const errors = validateConsentPayload(body);
 
   if (errors.length) {
@@ -110,13 +129,40 @@ export async function POST(request: Request) {
     collectorId: "usr-demo",
     consentDate: body.consentDate || new Date().toISOString().slice(0, 10),
     consentFormVersion: body.consentFormVersion || "10X-SAMPLE-v1",
+    geoCaptureStatus: geoStatus(body.geoCaptureStatus),
+    geoLatitude: optionalNumber(body.geoLatitude),
+    geoLongitude: optionalNumber(body.geoLongitude),
+    geoAccuracy: optionalNumber(body.geoAccuracy),
+    geoCapturedAt: body.geoCapturedAt || "",
+    geoCaptureError: body.geoCaptureError || "",
+    auditFormOpenedAt: body.auditFormOpenedAt || "",
+    auditSubmittedAt: body.auditSubmittedAt || serverSubmittedAt,
+    auditServerReceivedAt: serverSubmittedAt,
+    auditTimezone: body.auditTimezone || "",
+    auditLanguage: body.auditLanguage || "",
+    auditUserAgent: body.auditUserAgent || request.headers.get("user-agent") || "",
+    auditIpAddress: requestIp(request),
+    auditScreenWidth: optionalNumber(body.auditScreenWidth),
+    auditScreenHeight: optionalNumber(body.auditScreenHeight),
+    auditSubmissionPath: body.auditSubmissionPath || "",
+    auditRequestHost: request.headers.get("host") || "",
+    verificationStatus: "auto_verified",
+    riskScore: 0,
+    riskFlags: [],
+    verificationCheckedAt: "",
     pdfFile: "",
     pdfFileKey: "",
-    pdfGeneratedAt: "",
+    pdfGeneratedAt: new Date().toISOString(),
     pdfStatus: "pending",
     status: "locked",
     createdAt: new Date().toISOString(),
   };
+
+  const risk = scoreConsentRisk(record, await getConsents());
+  record.verificationStatus = risk.verificationStatus;
+  record.riskScore = risk.riskScore;
+  record.riskFlags = risk.riskFlags;
+  record.verificationCheckedAt = risk.verificationCheckedAt;
 
   const pdf = await generateConsentPdf(record);
   record.pdfFile = pdf.pdfFile;

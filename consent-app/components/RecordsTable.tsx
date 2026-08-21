@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { ConsentRecord } from "@/lib/db";
 import { applyRecordFilters } from "@/lib/analytics";
+import { consentRecordedAt, formatConsentDateTime } from "@/lib/dateTime";
 
 type Props = {
   records: ConsentRecord[];
@@ -135,8 +136,9 @@ export function RecordsTable({ records, compact = false }: Props) {
                 <th>ESO</th>
                 <th>Decision</th>
                 <th>Status</th>
+                <th>Verification</th>
                 <th>Collected By</th>
-                <th>Consent Date</th>
+                <th>Consent Date &amp; Time</th>
                 <th>PDF</th>
                 <th>Actions</th>
               </tr>
@@ -152,8 +154,11 @@ export function RecordsTable({ records, compact = false }: Props) {
                     <span className="tag">{record.consentDecision || "pending"}</span>
                   </td>
                   <td>{record.status || "locked"}</td>
+                  <td>
+                    <span className="tag">{record.verificationStatus || "auto_verified"}</span>
+                  </td>
                   <td>{record.collectorName || "N/A"}</td>
-                  <td>{record.consentDate}</td>
+                  <td>{formatConsentDateTime(consentRecordedAt(record))}</td>
                   <td>
                     {record.pdfFile || record.pdfFileKey ? (
                       <a href={downloadHref(record)} target="_blank" rel="noreferrer">

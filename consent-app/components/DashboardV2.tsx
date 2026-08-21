@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ConsentRecord } from "@/lib/db";
 import type { ParticipantSummary } from "@/lib/participants";
 import { getActionRequired, getDashboardStats, getEsoProgress } from "@/lib/analytics";
+import { formatConsentDateTime } from "@/lib/dateTime";
 
 export function DashboardSummaryCards({
   participants,
@@ -60,7 +61,7 @@ export function ConsentProgressByEso({
                 <th>Declined</th>
                 <th>Pending</th>
                 <th>Coverage</th>
-                <th>Last Consent Date</th>
+                <th>Last Consent Date &amp; Time</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -75,7 +76,7 @@ export function ConsentProgressByEso({
                   <td>{row.declined}</td>
                   <td>{row.pending}</td>
                   <td>{row.coverage.toFixed(1)}%</td>
-                  <td>{row.lastConsentDate || "N/A"}</td>
+                  <td>{row.lastConsentAt ? formatConsentDateTime(row.lastConsentAt) : "N/A"}</td>
                   <td>
                     <Link href={`/participants/pending?eso=${encodeURIComponent(row.eso)}`}>Open pending</Link>
                   </td>
