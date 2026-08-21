@@ -1,14 +1,24 @@
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
+import { join } from "node:path";
 import JSZip from "jszip";
 import { getCurrentConsents } from "./analytics";
-import { dataPath } from "./dataPaths";
+import { dataFolder, dataPath } from "./dataPaths";
 import { consentRecordedAt } from "./dateTime";
 import type { ConsentRecord } from "./db";
+import { getActiveParticipants, type ParticipantSummary } from "./participants";
 
 const templatePath = dataPath("data_template", "Device_financing_Data.xlsx");
 const sheetPath = "xl/worksheets/sheet1.xml";
 const sharedStringsPath = "xl/sharedStrings.xml";
 const lastColumn = "P";
+
+type SourceRow = {
+  values: Record<string, string>;
+  name: string;
+  eso: string;
+  phones: string[];
+  identifiers: string[];
+};
 
 export type UncdfExportFilters = {
   eso?: string;
@@ -92,16 +102,28 @@ function valueFromCell(cellXml: string, sharedStrings: string[]) {
   return "";
 }
 
-function parseHeaderRow(sheetXml: string, sharedStrings: string[]) {
-  const headerXml = sheetXml.match(/<row\b[^>]*\br="1"[\s\S]*?<\/row>/)?.[0];
-  if (!headerXml) throw new Error("UNCDF export template is missing a header row.");
+function parseRows(sheetXml: string, sharedStrings: string[]) {
+  const rows: { rowNumber: number; rowXml: string; cells: Map<string, string> }[] = [];
 
-  const headers = new Map<string, string>();
-  for (const cellMatch of headerXml.matchAll(/<c\b[^>]*\br="([A-Z]+\d+)"[\s\S]*?<\/c>/g)) {
-    headers.set(columnFromRef(cellMatch[1]), valueFromCell(cellMatch[0], sharedStrings));
+  for (const rowMatch of sheetXml.matchAll(/<row\b[^>]*\br="(\d+)"[\s\S]*?<\/row>/g)) {
+    const rowXml = rowMatch[0];
+    const cells = new Map<string, string>();
+
+    for (const cellMatch of rowXml.matchAll(/<c\b[^>]*\br="([A-Z]+\d+)"[\s\S]*?<\/c>/g)) {
+      cells.set(columnFromRef(cellMatch[1]), valueFromCell(cellMatch[0], sharedStrings));
+    }
+
+    rows.push({ rowNumber: Number(rowMatch[1]), rowXml, cells });
   }
 
-  return { headerXml, headers: [...headers.values()] };
+  return rows;
+}
+
+function parseHeaderRow(sheetXml: string, sharedStrings: string[]) {
+  const headerRow = parseRows(sheetXml, sharedStrings).find((row) => row.rowNumber === 1);
+  if (!headerRow) throw new Error("UNCDF export template is missing a header row.");
+
+  return { headerXml: headerRow.rowXml, headers: [...headerRow.cells.values()] };
 }
 
 function cellRef(columnIndex: number, rowNumber: number) {
@@ -124,22 +146,228 @@ function rowXml(rowNumber: number, values: string[]) {
   return `<row r="${rowNumber}">${values.map((value, index) => inlineCell(index, rowNumber, value)).join("")}</row>`;
 }
 
-function consentValue(record: ConsentRecord, header: string) {
-  const normalized = header.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-  const phone = record.participantPhone || "";
+function normalizeKey(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
 
-  if (normalized === "eso") return record.esoName || record.esoId;
-  if (normalized === "name") return record.participantName;
-  if (normalized === "mtn") return phone;
-  if (normalized === "airtel") return "";
-  if (normalized === "type of business") return record.programName || record.serviceRequired;
-  if (normalized === "type of device needed") return record.serviceRequired || "";
-  if (normalized === "prefered mode payment" || normalized === "preferred mode payment") return "";
-  if (normalized === "primary key") return record.participantExternalId || record.participantId || record.referenceNumber;
-  if (normalized === "unique id") return record.participantExternalId || record.participantId || record.referenceNumber;
+function firstValue(values: Record<string, string> | undefined, candidates: string[]) {
+  if (!values) return "";
+  const entries = Object.entries(values);
+
+  for (const candidate of candidates) {
+    const normalizedCandidate = normalizeKey(candidate);
+    const exact = entries.find(([key, value]) => normalizeKey(key) === normalizedCandidate && value.trim());
+    if (exact) return exact[1].trim();
+  }
+
+  for (const candidate of candidates) {
+    const normalizedCandidate = normalizeKey(candidate);
+    const partial = entries.find(([key, value]) => normalizeKey(key).includes(normalizedCandidate) && value.trim());
+    if (partial) return partial[1].trim();
+  }
+
+  return "";
+}
+
+function fullNameFromSource(values: Record<string, string>) {
+  const direct = firstValue(values, ["NAME", "Full Name", "Enterprise Owner", "Preferred Name"]);
+  if (direct) return direct;
+
+  return [firstValue(values, ["First Name"]), firstValue(values, ["Middle Name"]), firstValue(values, ["Surname"])]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+}
+
+function sourceEso(values: Record<string, string>) {
+  return firstValue(values, ["ESO", "Implementing Partner Name", "Downstream Partner"]);
+}
+
+function sourcePhones(values: Record<string, string>) {
+  return [
+    firstValue(values, ["MTN"]),
+    firstValue(values, ["AIRTEL"]),
+    firstValue(values, ["Primary Phone Number"]),
+    firstValue(values, ["Additional Phone Number 1"]),
+    firstValue(values, ["Additional Phone Number 2"]),
+  ].filter(Boolean);
+}
+
+function sourceIdentifiers(values: Record<string, string>) {
+  return [
+    firstValue(values, ["Primary Key", "Unique ID", "Unique identifier", "Enterprise Unique Identifier", "Unique Key", "UNIQUE KEY", "ID Number"]),
+  ].filter(Boolean);
+}
+
+function phoneKeys(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  if (!digits) return [];
+
+  const keys = new Set([digits]);
+  if (digits.startsWith("256") && digits.length >= 12) keys.add(`0${digits.slice(3)}`);
+  if (digits.length >= 9) keys.add(digits.slice(-9));
+  return [...keys];
+}
+
+function participantIndex(participants: ParticipantSummary[]) {
+  const byId = new Map<string, ParticipantSummary>();
+  const byExternalId = new Map<string, ParticipantSummary>();
+  const byNameEso = new Map<string, ParticipantSummary>();
+
+  for (const participant of participants) {
+    if (participant.id) byId.set(participant.id, participant);
+    if (participant.externalId) byExternalId.set(participant.externalId, participant);
+
+    const name = normalizeKey(participant.fullName);
+    const eso = normalizeKey(participant.esoName);
+    if (name && eso && !byNameEso.has(`${name}|${eso}`)) byNameEso.set(`${name}|${eso}`, participant);
+  }
+
+  return { byId, byExternalId, byNameEso };
+}
+
+function participantFor(record: ConsentRecord, index: ReturnType<typeof participantIndex>) {
+  if (record.participantId && index.byId.has(record.participantId)) return index.byId.get(record.participantId);
+  if (record.participantExternalId && index.byExternalId.has(record.participantExternalId)) return index.byExternalId.get(record.participantExternalId);
+
+  const name = normalizeKey(record.participantName);
+  const eso = normalizeKey(record.esoName);
+  if (name && eso) return index.byNameEso.get(`${name}|${eso}`);
+
+  return undefined;
+}
+
+function phoneCarrier(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  const local = digits.startsWith("256") ? digits.slice(3) : digits.startsWith("0") ? digits.slice(1) : digits;
+  const prefix = local.slice(0, 2);
+
+  if (["70", "74", "75", "20"].includes(prefix)) return "airtel";
+  if (["76", "77", "78", "39"].includes(prefix)) return "mtn";
+  return "unknown";
+}
+
+async function loadSourceRowsFromWorkbook(filePath: string) {
+  const workbook = await readFile(filePath);
+  const zip = await JSZip.loadAsync(workbook);
+  const sheetFile = zip.file(sheetPath);
+  const sharedStringsFile = zip.file(sharedStringsPath);
+  if (!sheetFile) return [];
+
+  const [sheetXml, sharedStringsXml] = await Promise.all([sheetFile.async("string"), sharedStringsFile?.async("string") || ""]);
+  const sharedStrings = parseSharedStrings(sharedStringsXml);
+  const rows = parseRows(sheetXml, sharedStrings);
+  const headerRow = rows.find((row) => row.rowNumber === 1);
+  if (!headerRow) return [];
+
+  const headers = [...headerRow.cells.values()];
+
+  return rows
+    .filter((row) => row.rowNumber > 1)
+    .map((row) => {
+      const values = Object.fromEntries(headers.map((header, index) => [header, row.cells.get(cellRef(index, 1).replace("1", "")) || ""]));
+      return {
+        values,
+        name: fullNameFromSource(values),
+        eso: sourceEso(values),
+        phones: sourcePhones(values),
+        identifiers: sourceIdentifiers(values),
+      } satisfies SourceRow;
+    })
+    .filter((row) => Object.values(row.values).some((value) => value.trim()));
+}
+
+async function sourceRows() {
+  const rows: SourceRow[] = [];
+  rows.push(...(await loadSourceRowsFromWorkbook(templatePath)));
+
+  try {
+    const folder = dataFolder("sample_dataset");
+    const files = await readdir(folder);
+    for (const file of files.filter((name) => name.toLowerCase().endsWith(".xlsx"))) {
+      rows.push(...(await loadSourceRowsFromWorkbook(join(folder, file))));
+    }
+  } catch {
+    return rows;
+  }
+
+  return rows;
+}
+
+function sourceIndex(rows: SourceRow[]) {
+  const byIdentifier = new Map<string, SourceRow>();
+  const byPhone = new Map<string, SourceRow>();
+  const byNameEso = new Map<string, SourceRow>();
+  const byName = new Map<string, SourceRow>();
+
+  for (const row of rows) {
+    for (const identifier of row.identifiers) {
+      const key = normalizeKey(identifier);
+      if (key && !byIdentifier.has(key)) byIdentifier.set(key, row);
+    }
+
+    for (const phone of row.phones.flatMap(phoneKeys)) {
+      if (phone && !byPhone.has(phone)) byPhone.set(phone, row);
+    }
+
+    const name = normalizeKey(row.name);
+    const eso = normalizeKey(row.eso);
+    if (name && eso && !byNameEso.has(`${name}|${eso}`)) byNameEso.set(`${name}|${eso}`, row);
+    if (name && !byName.has(name)) byName.set(name, row);
+  }
+
+  return { byIdentifier, byPhone, byNameEso, byName };
+}
+
+function sourceFor(record: ConsentRecord, index: ReturnType<typeof sourceIndex>) {
+  for (const identifier of [record.participantExternalId, record.participantId, record.referenceNumber]) {
+    const match = identifier ? index.byIdentifier.get(normalizeKey(identifier)) : undefined;
+    if (match) return match;
+  }
+
+  for (const phone of phoneKeys(record.participantPhone)) {
+    const match = index.byPhone.get(phone);
+    if (match) return match;
+  }
+
+  const name = normalizeKey(record.participantName);
+  const eso = normalizeKey(record.esoName);
+  if (name && eso) {
+    const match = index.byNameEso.get(`${name}|${eso}`);
+    if (match) return match;
+  }
+
+  return name ? index.byName.get(name) : undefined;
+}
+
+function consentValue(record: ConsentRecord, participant: ParticipantSummary | undefined, source: SourceRow | undefined, header: string) {
+  const normalized = header.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const sourcePhone = firstValue(source?.values, ["MTN", "AIRTEL", "Primary Phone Number", "Additional Phone Number 1", "Additional Phone Number 2"]);
+  const phone = record.participantPhone || participant?.phone || sourcePhone || "";
+  const participantId = record.participantExternalId || participant?.externalId || record.participantId || participant?.id || record.referenceNumber;
+  const carrier = phoneCarrier(phone);
+
+  if (normalized === "eso") return record.esoName || participant?.esoName || sourceEso(source?.values || {}) || record.esoId || participant?.esoId || "";
+  if (normalized === "name") return record.participantName || participant?.fullName || source?.name || "";
+  if (normalized === "mtn") return firstValue(source?.values, ["MTN"]) || (carrier === "airtel" ? "" : phone);
+  if (normalized === "airtel") return firstValue(source?.values, ["AIRTEL"]) || (carrier === "airtel" ? phone : "");
+  if (normalized === "type of business") return firstValue(source?.values, ["Type of Business", "Sector", "Enterprise Type"]) || participant?.sector || record.serviceRequired || "";
+  if (normalized === "business name") return firstValue(source?.values, ["Business Name", "Enterprise Name"]);
+  if (normalized === "registration status") return firstValue(source?.values, ["Registration Status", "Formality"]);
+  if (normalized === "duration in business") return firstValue(source?.values, ["Duration in business"]);
+  if (normalized === "type of device needed") return firstValue(source?.values, ["Type of device needed"]) || record.serviceRequired || "";
+  if (normalized === "amount willing to pay ugx") return firstValue(source?.values, ["Amount willing to pay (UGX)", "Amount willing to pay"]);
+  if (normalized === "prefered mode payment" || normalized === "preferred mode payment") return firstValue(source?.values, ["Prefered mode payment", "Preferred mode payment"]);
+  if (normalized === "id type") return firstValue(source?.values, ["ID_type", "ID type"]) || (participantId ? "Participant ID" : "");
+  if (normalized === "id number") return firstValue(source?.values, ["ID Number", "Unique identifier", "Enterprise Unique Identifier"]) || participantId;
+  if (normalized === "district") return firstValue(source?.values, ["District", "Administrative Level2 : District", "Administrative Level2"]) || participant?.district || "";
+  if (normalized === "subcounty") return firstValue(source?.values, ["Subcounty", "Administrative Level4: Sub County", "Administrative Level4"]);
+  if (normalized === "village") return firstValue(source?.values, ["Village", "Administrative Level5 : Parish", "Administrative Level5", "Home Address"]);
+  if (normalized === "primary key") return participantId;
+  if (normalized === "unique id") return participantId;
   if (normalized.includes("consent")) return record.referenceNumber;
   if (normalized.includes("phone")) return phone;
-  if (normalized.includes("participant")) return record.participantExternalId || record.participantId || record.participantName;
+  if (normalized.includes("participant")) return participantId || record.participantName || participant?.fullName || "";
   return "";
 }
 
@@ -167,28 +395,37 @@ async function loadTemplate() {
   return { zip, sheetXml, headerXml, headers };
 }
 
-function consentRows(records: ConsentRecord[], headers: string[], filters: UncdfExportFilters) {
+async function consentRows(records: ConsentRecord[], headers: string[], filters: UncdfExportFilters) {
+  const participants = await getActiveParticipants();
+  const participantLookup = participantIndex(participants);
+  const sourceLookup = sourceIndex(await sourceRows());
+
   return [...getCurrentConsents(records).values()]
     .filter((record) => isUncdfConsent(record, filters))
-    .map((record, index) => ({
-      rowNumber: index + 2,
-      values: Object.fromEntries(headers.map((header) => [header, consentValue(record, header)])),
-      match: {
-        referenceNumber: record.referenceNumber,
-        consentDate: record.consentDate,
-        recordedAt: consentRecordedAt(record),
-        participantName: record.participantName,
-        participantPhone: record.participantPhone,
-        esoName: record.esoName,
-        pdfAvailable: Boolean(record.pdfFileKey || record.pdfFile),
-        matchedBy: "consent_record" as const,
-      },
-    }));
+    .map((record, rowIndex) => {
+      const participant = participantFor(record, participantLookup);
+      const source = sourceFor(record, sourceLookup);
+
+      return {
+        rowNumber: rowIndex + 2,
+        values: Object.fromEntries(headers.map((header) => [header, consentValue(record, participant, source, header)])),
+        match: {
+          referenceNumber: record.referenceNumber,
+          consentDate: record.consentDate,
+          recordedAt: consentRecordedAt(record),
+          participantName: record.participantName || participant?.fullName || source?.name || "",
+          participantPhone: record.participantPhone || participant?.phone || sourcePhones(source?.values || {})[0] || "",
+          esoName: record.esoName || participant?.esoName || source?.eso || "",
+          pdfAvailable: Boolean(record.pdfFileKey || record.pdfFile),
+          matchedBy: "consent_record" as const,
+        },
+      };
+    });
 }
 
 export async function getUncdfGate(records: ConsentRecord[], filters: UncdfExportFilters = {}) {
   const template = await loadTemplate();
-  const shareableRows = consentRows(records, template.headers, filters);
+  const shareableRows = await consentRows(records, template.headers, filters);
 
   return {
     rows: shareableRows,
@@ -204,7 +441,7 @@ export async function getUncdfGate(records: ConsentRecord[], filters: UncdfExpor
 
 export async function buildUncdfWorkbook(records: ConsentRecord[], filters: UncdfExportFilters = {}) {
   const template = await loadTemplate();
-  const shareableRows = consentRows(records, template.headers, filters);
+  const shareableRows = await consentRows(records, template.headers, filters);
   const rowCount = Math.max(shareableRows.length + 1, 1);
   const rewrittenRows = [
     template.headerXml,
