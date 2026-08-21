@@ -24,7 +24,7 @@ export default async function UncdfPage() {
       <header className="topbar">
         <div>
           <h1>UNCDF Data Gate</h1>
-          <p>Device-financing participants available only after signed consent is verified.</p>
+          <p>All current participants whose consent has been recorded as consented.</p>
         </div>
         <div className="records-actions">
           <a className="button secondary" href="/api/exports/uncdf">
@@ -35,7 +35,7 @@ export default async function UncdfPage() {
 
       <section className="cards richblack-cards" aria-label="UNCDF sharing summary">
         <div className="metric">
-          <span>Device dataset</span>
+          <span>Consented records</span>
           <strong>{gate.summary.totalRows}</strong>
         </div>
         <div className="metric">
@@ -43,7 +43,7 @@ export default async function UncdfPage() {
           <strong>{gate.summary.shareableRows}</strong>
         </div>
         <div className="metric">
-          <span>Pending consent</span>
+          <span>Pending in this gate</span>
           <strong>{gate.summary.pendingRows}</strong>
         </div>
         <div className="metric">
@@ -56,7 +56,7 @@ export default async function UncdfPage() {
         <div className="section-heading">
           <div>
             <h2>Consented Participants</h2>
-            <p>Only these rows are included in the UNCDF export.</p>
+            <p>These rows come directly from current consented submissions.</p>
           </div>
         </div>
         <div className="table-scroll">
