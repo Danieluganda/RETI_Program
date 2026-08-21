@@ -8,7 +8,9 @@ export function BusalaShell({ children }: { children: React.ReactNode }) {
         </div>
         <nav className="nav">
           <a href="/busala">Consented Data</a>
-          <a href="/api/exports/busala">Download ZIP</a>
+          <a href="/api/exports/busala" download>
+            Download ZIP
+          </a>
         </nav>
       </aside>
       <main className="main">{children}</main>

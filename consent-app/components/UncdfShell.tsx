@@ -8,7 +8,9 @@ export function UncdfShell({ children }: { children: React.ReactNode }) {
         </div>
         <nav className="nav">
           <a href="/uncdf">Consented Data</a>
-          <a href="/api/exports/uncdf">Download Excel</a>
+          <a href="/api/exports/uncdf" download>
+            Download Excel
+          </a>
         </nav>
       </aside>
       <main className="main">{children}</main>

@@ -27,7 +27,7 @@ export default async function RichblackPage() {
           <p>Device-financing participants available only after signed consent is verified.</p>
         </div>
         <div className="records-actions">
-          <a className="button secondary" href="/api/exports/richblack">
+          <a className="button secondary" href="/api/exports/richblack" download>
             Download consented data
           </a>
         </div>

@@ -8,7 +8,9 @@ export function RichblackShell({ children }: { children: React.ReactNode }) {
         </div>
         <nav className="nav">
           <a href="/richblack">Consented Data</a>
-          <a href="/api/exports/richblack">Download Excel</a>
+          <a href="/api/exports/richblack" download>
+            Download Excel
+          </a>
         </nav>
       </aside>
       <main className="main">{children}</main>

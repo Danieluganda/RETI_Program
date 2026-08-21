@@ -4,6 +4,8 @@ import { readPrivateFile } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
+const maxPdfExportRecords = Number(process.env.PDF_EXPORT_MAX_RECORDS || 200);
+
 function csvCell(value: unknown) {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;
 }
@@ -26,12 +28,48 @@ function exportFileName(from?: string, to?: string) {
   return "10x-consent-pdfs-all.zip";
 }
 
+async function mapWithConcurrency<T, R>(items: T[], concurrency: number, mapper: (item: T) => Promise<R>) {
+  const results: R[] = new Array(items.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      results[index] = await mapper(items[index]);
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
+  return results;
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const from = url.searchParams.get("from") || undefined;
   const to = url.searchParams.get("to") || undefined;
 
   const records = (await getConsents()).filter((record) => record.pdfFileKey && inDateRange(record, from, to));
+
+  if (records.length > maxPdfExportRecords) {
+    return Response.json(
+      {
+        error: "PDF export range is too large",
+        count: records.length,
+        max: maxPdfExportRecords,
+        message: `This date range contains ${records.length} PDFs. Please export a smaller date range with ${maxPdfExportRecords} PDFs or fewer.`,
+      },
+      {
+        status: 413,
+        headers: {
+          "Cache-Control": "no-store",
+          "X-Export-Record-Count": String(records.length),
+          "X-Export-Max-Record-Count": String(maxPdfExportRecords),
+        },
+      },
+    );
+  }
+
   const zip = new JSZip();
   const summaryHeaders = [
     "referenceNumber",
@@ -46,32 +84,18 @@ export async function GET(request: Request) {
   ];
   const summaryRows: string[] = [];
 
-  for (const record of records) {
-    const folder = zip.folder(safeFolderName(record.referenceNumber));
-    let exportStatus = "included";
-
+  const pdfs = await mapWithConcurrency(records, 12, async (record) => {
     try {
-      const pdf = await readPrivateFile(record.pdfFileKey);
-      folder?.file("consent-form.pdf", pdf);
-      folder?.file(
-        "metadata.json",
-        JSON.stringify(
-          {
-            referenceNumber: record.referenceNumber,
-            participantName: record.participantName,
-            esoName: record.esoName,
-            consentFormType: record.consentFormType,
-            consentDecision: record.consentDecision,
-            consentDate: record.consentDate,
-            collectorName: record.collectorName,
-            pdfFileKey: record.pdfFileKey,
-          },
-          null,
-          2,
-        ),
-      );
+      return { record, pdf: await readPrivateFile(record.pdfFileKey), exportStatus: "included" };
     } catch {
-      exportStatus = "pdf-missing";
+      return { record, pdf: null, exportStatus: "pdf-missing" };
+    }
+  });
+
+  for (const { record, pdf, exportStatus } of pdfs) {
+    const folder = zip.folder(safeFolderName(record.referenceNumber));
+    if (pdf) {
+      folder?.file("consent-form.pdf", pdf);
     }
 
     summaryRows.push(
@@ -92,13 +116,14 @@ export async function GET(request: Request) {
   }
 
   zip.file("export-summary.csv", [summaryHeaders.join(","), ...summaryRows].join("\n"));
-  const body = Buffer.from(await zip.generateAsync({ type: "uint8array", compression: "DEFLATE" }));
+  const body = Buffer.from(await zip.generateAsync({ type: "uint8array", compression: "STORE" }));
 
   return new Response(body, {
     headers: {
       "Content-Type": "application/zip",
       "Content-Disposition": `attachment; filename="${exportFileName(from, to)}"`,
       "Cache-Control": "no-store",
+      "X-Export-Record-Count": String(records.length),
     },
   });
 }

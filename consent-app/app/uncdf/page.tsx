@@ -27,7 +27,7 @@ export default async function UncdfPage() {
           <p>All current participants whose consent has been recorded as consented.</p>
         </div>
         <div className="records-actions">
-          <a className="button secondary" href="/api/exports/uncdf">
+          <a className="button secondary" href="/api/exports/uncdf" download>
             Download consented data
           </a>
         </div>

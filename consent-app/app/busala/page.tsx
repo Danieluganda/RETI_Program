@@ -27,7 +27,7 @@ export default async function BusalaPage() {
           <p>Sample dataset participants available only after signed consent is verified.</p>
         </div>
         <div className="records-actions">
-          <a className="button secondary" href="/api/exports/busala">
+          <a className="button secondary" href="/api/exports/busala" download>
             Download consented data
           </a>
         </div>

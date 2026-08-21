@@ -15,19 +15,20 @@ export default async function RecordsPage() {
           <p>Submitted participant consent forms.</p>
         </div>
         <div className="records-actions">
-          <a className="button secondary" href="/api/reports">
+          <a className="button secondary" href="/api/reports" download>
             Download CSV
           </a>
-          <a className="button secondary" href="/api/exports/richblack">
+          <a className="button secondary" href="/api/exports/richblack" download>
             Export Richblack consented data
           </a>
-          <a className="button primary" href="/api/exports/pdfs">
+          <a className="button primary" href="/api/exports/pdfs" download>
             Export all PDFs
           </a>
         </div>
       </header>
       <section className="panel export-panel">
         <h2>Export PDFs by Consent Date</h2>
+        <p className="field-hint">PDF exports are capped at 200 files per ZIP. Use shorter date ranges for larger batches.</p>
         <form className="export-form" action="/api/exports/pdfs" method="get">
           <div>
             <label htmlFor="from">From</label>
