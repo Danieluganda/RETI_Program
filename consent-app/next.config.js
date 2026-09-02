@@ -5,6 +5,7 @@ const nextConfig = (phase) => {
   const isDevServer = phase === PHASE_DEVELOPMENT_SERVER;
 
   return {
+    output: "standalone",
     outputFileTracingRoot: __dirname,
     distDir: isDevServer ? ".next-dev" : ".next",
     allowedDevOrigins: ["192.168.100.43"],
