@@ -586,9 +586,20 @@ input[type="file"] {
 
 .export-form {
   display: grid;
-  grid-template-columns: repeat(2, minmax(160px, 220px)) auto;
+  grid-template-columns: repeat(3, minmax(160px, 240px)) auto;
   align-items: end;
   gap: 12px;
+}
+
+.secondary-export-form,
+.dashboard-filter-form {
+  grid-template-columns: minmax(220px, 320px) auto auto;
+}
+
+.secondary-export-form {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
 }
 
 .toolbar {

@@ -10,10 +10,12 @@ export type ConsentRecord = {
   esoId: string;
   participantName: string;
   participantPhone: string;
+  participantEmail?: string;
   participantExternalId: string;
   programName: string;
   esoName: string;
   consentFormType: string;
+  poaSample?: string;
   implementingOrganization: string;
   dataCollectorOrganization: string;
   dataCollectorContact: string;

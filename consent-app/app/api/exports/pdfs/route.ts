@@ -1,5 +1,7 @@
 import JSZip from "jszip";
 import { getConsents, type ConsentRecord } from "@/lib/db";
+import { poaSampleStatus } from "@/lib/poaSample";
+import { getActiveParticipants } from "@/lib/participants";
 import { readPrivateFile } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
@@ -21,11 +23,12 @@ function inDateRange(record: ConsentRecord, from?: string, to?: string) {
   return true;
 }
 
-function exportFileName(from?: string, to?: string) {
-  if (from && to) return `10x-consent-pdfs-${from}_to_${to}.zip`;
-  if (from) return `10x-consent-pdfs-from-${from}.zip`;
-  if (to) return `10x-consent-pdfs-to-${to}.zip`;
-  return "10x-consent-pdfs-all.zip";
+function exportFileName(from?: string, to?: string, eso?: string) {
+  const esoPart = eso ? `${safeFolderName(eso)}-` : "";
+  if (from && to) return `10x-consent-pdfs-${esoPart}${from}_to_${to}.zip`;
+  if (from) return `10x-consent-pdfs-${esoPart}from-${from}.zip`;
+  if (to) return `10x-consent-pdfs-${esoPart}to-${to}.zip`;
+  return `10x-consent-pdfs-${esoPart}all.zip`;
 }
 
 async function mapWithConcurrency<T, R>(items: T[], concurrency: number, mapper: (item: T) => Promise<R>) {
@@ -48,8 +51,15 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const from = url.searchParams.get("from") || undefined;
   const to = url.searchParams.get("to") || undefined;
+  const eso = url.searchParams.get("eso") || "";
 
-  const records = (await getConsents()).filter((record) => record.pdfFileKey && inDateRange(record, from, to));
+  const [allRecords, participants] = await Promise.all([getConsents(), getActiveParticipants()]);
+  const participantsById = new Map(participants.map((participant) => [participant.id, participant]));
+  const participantsByExternalId = new Map(participants.map((participant) => [participant.externalId, participant]));
+  const records = allRecords.filter((record) => {
+    const participant = participantsById.get(record.participantId) || participantsByExternalId.get(record.participantExternalId);
+    return Boolean(record.pdfFileKey && inDateRange(record, from, to) && (!eso || record.esoName === eso || participant?.esoName === eso));
+  });
 
   if (records.length > maxPdfExportRecords) {
     return Response.json(
@@ -73,8 +83,11 @@ export async function GET(request: Request) {
   const zip = new JSZip();
   const summaryHeaders = [
     "referenceNumber",
+    "participantExternalId",
     "participantName",
+    "participantEmail",
     "esoName",
+    "poaSample",
     "consentFormType",
     "consentDecision",
     "consentDate",
@@ -93,6 +106,7 @@ export async function GET(request: Request) {
   });
 
   for (const { record, pdf, exportStatus } of pdfs) {
+    const participant = participantsById.get(record.participantId) || participantsByExternalId.get(record.participantExternalId);
     const folder = zip.folder(safeFolderName(record.referenceNumber));
     if (pdf) {
       folder?.file("consent-form.pdf", pdf);
@@ -101,8 +115,11 @@ export async function GET(request: Request) {
     summaryRows.push(
       [
         record.referenceNumber,
+        record.participantExternalId,
         record.participantName,
+        participant?.email || "",
         record.esoName,
+        poaSampleStatus(record, participant),
         record.consentFormType,
         record.consentDecision,
         record.consentDate,
@@ -121,7 +138,7 @@ export async function GET(request: Request) {
   return new Response(body, {
     headers: {
       "Content-Type": "application/zip",
-      "Content-Disposition": `attachment; filename="${exportFileName(from, to)}"`,
+      "Content-Disposition": `attachment; filename="${exportFileName(from, to, eso)}"`,
       "Cache-Control": "no-store",
       "X-Export-Record-Count": String(records.length),
     },

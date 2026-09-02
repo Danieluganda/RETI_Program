@@ -133,7 +133,9 @@ export function RecordsTable({ records, compact = false }: Props) {
                 <th>Consent Reference</th>
                 <th>Participant Reference</th>
                 <th>Participant</th>
+                <th>Email</th>
                 <th>ESO</th>
+                <th>POA Sample</th>
                 <th>Decision</th>
                 <th>Status</th>
                 <th>Verification</th>
@@ -149,7 +151,9 @@ export function RecordsTable({ records, compact = false }: Props) {
                   <td>{record.referenceNumber}</td>
                   <td>{record.participantExternalId || record.participantId || "N/A"}</td>
                   <td>{record.participantName}</td>
+                  <td>{record.participantEmail || "N/A"}</td>
                   <td>{record.esoName || "Unassigned"}</td>
+                  <td>{record.poaSample || "Unknown"}</td>
                   <td>
                     <span className="tag">{record.consentDecision || "pending"}</span>
                   </td>
