@@ -763,10 +763,11 @@ export function ConsentForm({
                         type="button"
                         role="option"
                         className="participant-result"
+                        disabled={!participant.email}
                         onClick={() => selectParticipant(participant)}
                       >
                         <span>{participant.fullName}</span>
-                        <small>{[participant.phone, participant.externalId].filter(Boolean).join(" | ")}</small>
+                        <small>{[participant.phone, participant.externalId, participant.email || "Missing email"].filter(Boolean).join(" | ")}</small>
                       </button>
                     ))}
                   </div>

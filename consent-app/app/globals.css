@@ -375,6 +375,16 @@ button,
   background: var(--soft);
 }
 
+.participant-result:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.participant-result:disabled:hover,
+.participant-result:disabled:focus {
+  background: #ffffff;
+}
+
 .participant-result small,
 .participant-empty {
   color: var(--muted);

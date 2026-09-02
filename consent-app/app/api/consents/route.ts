@@ -65,6 +65,13 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!participant.email?.trim()) {
+    return NextResponse.json(
+      { error: "Selected participant is missing an email address. Update the participant record before submitting consent." },
+      { status: 422 },
+    );
+  }
+
   const existingConsent = await getExistingParticipantConsent(participant.id, body.consentFormType || "sample-space");
   if (existingConsent) {
     return NextResponse.json(
