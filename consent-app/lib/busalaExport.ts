@@ -3,7 +3,8 @@ import JSZip from "jszip";
 import { getCurrentConsents } from "./analytics";
 import { dataFolder, dataPath } from "./dataPaths";
 import type { ConsentRecord } from "./db";
-import { isAutoVerifiedConsent } from "./riskScoring";
+import { isPoaSampleSource, participantForConsent } from "./poaSample";
+import { getActiveParticipants, type ParticipantSummary } from "./participants";
 
 const sampleDataPath = dataFolder("sample_dataset");
 const sheetPath = "xl/worksheets/sheet1.xml";
@@ -24,6 +25,10 @@ export type BusalaDatasetRow = {
   rowXml: string;
   values: Record<string, string>;
   match?: BusalaConsentMatch;
+};
+
+type BusalaConsentRow = BusalaDatasetRow & {
+  participant: ParticipantSummary;
 };
 
 export type BusalaDatasetGate = {
@@ -87,9 +92,99 @@ function isEligibleConsent(record: ConsentRecord) {
   if (record.consentFormType !== "sample-space") return false;
   if (record.consentDecision !== "consented") return false;
   if (!["locked", "finalized"].includes(record.status || "")) return false;
-  if (!record.pdfFileKey && !record.pdfFile) return false;
-  if (!isAutoVerifiedConsent(record)) return false;
   return true;
+}
+
+function poaDatasetName(source: string) {
+  const normalized = source.toLowerCase();
+  if (normalized === "enterprise" || normalized.includes("enterprise")) return "Enterprise POA Sample";
+  if (normalized === "yiw" || normalized.includes("yiw")) return "YIW POA Sample";
+  if (normalized.includes("weo")) return "WEO Outbox";
+  if (normalized.includes("busala")) return "Busala POA Sample";
+  return source || "POA Sample";
+}
+
+function consentRecordedAt(record: ConsentRecord) {
+  return record.auditServerReceivedAt || record.createdAt || record.auditSubmittedAt || record.consentDate;
+}
+
+function buildPoaConsentRows(records: ConsentRecord[], participants: ParticipantSummary[]) {
+  const participantsById = new Map(participants.map((participant) => [participant.id, participant]));
+  const participantsByExternalId = new Map(participants.map((participant) => [participant.externalId, participant]));
+  const sourceRows = participants.filter((participant) => isPoaSampleSource(participant.source));
+
+  const rows = Array.from(getCurrentConsents(records).values())
+    .filter(isEligibleConsent)
+    .flatMap((record) => {
+      const participant = participantForConsent(record, participantsById, participantsByExternalId);
+      return participant && isPoaSampleSource(participant.source) ? [{ record, participant }] : [];
+    })
+    .map(({ record, participant }, index): BusalaConsentRow => {
+      const dataset = poaDatasetName(participant.source);
+
+      return {
+        dataset,
+        rowNumber: index + 2,
+        rowXml: "",
+        participant,
+        values: {
+          "Implementing Partner Name": record.esoName || participant.esoName,
+          "Downstream Partner": record.esoName || participant.esoName,
+          "Full Name": participant.fullName || record.participantName,
+          "Enterprise Owner": participant.fullName || record.participantName,
+          "Primary Phone Number": participant.phone || record.participantPhone,
+          "Administrative Level2 : District": participant.district,
+          "Administrative Level1 : Region": participant.region,
+          "Program Name": record.programName,
+        },
+        match: matchFromRecord(record),
+      };
+    });
+
+  return { sourceRows, shareableRows: rows };
+}
+
+function csvCell(value: unknown) {
+  return `"${String(value ?? "").replace(/"/g, '""')}"`;
+}
+
+function poaConsentRowsCsv(rows: BusalaConsentRow[]) {
+  const headers = [
+    "dataset",
+    "participantExternalId",
+    "participantName",
+    "participantPhone",
+    "participantEmail",
+    "esoName",
+    "district",
+    "region",
+    "programName",
+    "consentReference",
+    "consentDate",
+    "consentRecordedAt",
+  ];
+
+  const lines = [headers.join(",")];
+  rows.forEach((row) => {
+    const values = {
+      dataset: row.dataset,
+      participantExternalId: row.participant.externalId,
+      participantName: busalaRowName(row.values),
+      participantPhone: busalaRowPhone(row.values),
+      participantEmail: row.participant.email,
+      esoName: row.match?.esoName || row.participant.esoName,
+      district: row.participant.district,
+      region: row.participant.region,
+      programName: row.values["Program Name"],
+      consentReference: row.match?.referenceNumber || "",
+      consentDate: row.match?.consentDate || "",
+      consentRecordedAt: row.match?.recordedAt || "",
+    };
+
+    lines.push(headers.map((header) => csvCell(values[header as keyof typeof values])).join(","));
+  });
+
+  return `${lines.join("\n")}\n`;
 }
 
 function buildConsentIndex(records: ConsentRecord[]) {
@@ -276,68 +371,49 @@ async function busalaFileNames() {
 }
 
 export async function getBusalaGate(records: ConsentRecord[]) {
-  const consentIndex = buildConsentIndex(records);
-  const datasets: BusalaDatasetGate[] = [];
+  const participants = await getActiveParticipants();
+  const { sourceRows, shareableRows } = buildPoaConsentRows(records, participants);
+  const datasetNames = [...new Set([...sourceRows.map((participant) => poaDatasetName(participant.source)), ...shareableRows.map((row) => row.dataset)])].sort();
+  const datasets: BusalaDatasetGate[] = datasetNames.map((dataset) => {
+    const sourceCount = sourceRows.filter((participant) => poaDatasetName(participant.source) === dataset).length;
+    const shareable = shareableRows.filter((row) => row.dataset === dataset);
 
-  for (const fileName of await busalaFileNames()) {
-    const dataset = await loadDataset(fileName);
-    const rows = dataset.dataRows.map((row) => ({ ...row, match: matchConsent(row, consentIndex) }));
-    const shareable = rows.filter((row) => row.match);
-
-    datasets.push({
-      dataset: fileName,
-      totalRows: rows.length,
+    return {
+      dataset,
+      totalRows: sourceCount,
       shareableRows: shareable.length,
-      pendingRows: rows.length - shareable.length,
-      rows,
+      pendingRows: Math.max(sourceCount - shareable.length, 0),
+      rows: shareable,
       shareable,
-    });
-  }
+    };
+  });
 
-  const totalRows = datasets.reduce((sum, dataset) => sum + dataset.totalRows, 0);
-  const shareableRows = datasets.reduce((sum, dataset) => sum + dataset.shareableRows, 0);
+  const totalRows = sourceRows.length;
+  const shareableRowCount = shareableRows.length;
 
   return {
     datasets,
-    shareableRows: datasets.flatMap((dataset) => dataset.shareable),
+    shareableRows,
     summary: {
       totalRows,
-      shareableRows,
-      pendingRows: totalRows - shareableRows,
+      shareableRows: shareableRowCount,
+      pendingRows: Math.max(totalRows - shareableRowCount, 0),
       exportedAt: new Date().toISOString(),
     },
   };
 }
 
 export async function buildBusalaExport(records: ConsentRecord[]) {
-  const consentIndex = buildConsentIndex(records);
+  const participants = await getActiveParticipants();
+  const { sourceRows, shareableRows } = buildPoaConsentRows(records, participants);
   const bundle = new JSZip();
-  let totalRows = 0;
-  let shareableRows = 0;
-
-  for (const fileName of await busalaFileNames()) {
-    const dataset = await loadDataset(fileName);
-    const rows = dataset.dataRows.map((row) => ({ ...row, match: matchConsent(row, consentIndex) }));
-    const shareable = rows.filter((row) => row.match);
-    const lastColumn = columnIndexToName(Math.max(dataset.headers.length - 1, 0));
-    const rewrittenRows = [renumberRow(dataset.headerRow.rowXml, 1), ...shareable.map((row, index) => renumberRow(row.rowXml, index + 2))];
-    const rowCount = Math.max(rewrittenRows.length, 1);
-    const nextSheetXml = dataset.sheetXml
-      .replace(/<dimension ref="[^"]*"/, `<dimension ref="A1:${lastColumn}${rowCount}"`)
-      .replace(/<sheetData>[\s\S]*?<\/sheetData>/, `<sheetData>${rewrittenRows.join("")}</sheetData>`);
-
-    dataset.zip.file(sheetPath, nextSheetXml);
-    bundle.file(fileName, await dataset.zip.generateAsync({ type: "uint8array", compression: "DEFLATE" }));
-
-    totalRows += rows.length;
-    shareableRows += shareable.length;
-  }
+  bundle.file("busala-poa-consented-participants.csv", poaConsentRowsCsv(shareableRows));
 
   return {
     archive: Buffer.from(await bundle.generateAsync({ type: "uint8array", compression: "DEFLATE" })),
-    count: shareableRows,
-    totalRows,
-    pendingRows: totalRows - shareableRows,
+    count: shareableRows.length,
+    totalRows: sourceRows.length,
+    pendingRows: Math.max(sourceRows.length - shareableRows.length, 0),
   };
 }
 

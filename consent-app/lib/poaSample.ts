@@ -3,7 +3,13 @@ import type { ParticipantSummary } from "./participants";
 
 export function isPoaSampleSource(source = "") {
   const normalized = source.toLowerCase();
-  return normalized.includes("poa") || normalized.includes("busala");
+  return (
+    normalized.includes("poa") ||
+    normalized.includes("busala") ||
+    normalized === "enterprise" ||
+    normalized === "yiw" ||
+    normalized.includes("weo")
+  );
 }
 
 export function poaSampleStatus(record: ConsentRecord, participant?: ParticipantSummary) {
