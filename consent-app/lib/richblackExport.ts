@@ -3,7 +3,6 @@ import JSZip from "jszip";
 import { getCurrentConsents } from "./analytics";
 import { dataPath } from "./dataPaths";
 import type { ConsentRecord } from "./db";
-import { isAutoVerifiedConsent } from "./riskScoring";
 
 const deviceDataPath = dataPath("data_template", "Device_financing_Data.xlsx");
 const sheetPath = "xl/worksheets/sheet1.xml";
@@ -93,8 +92,6 @@ function isEligibleConsent(record: ConsentRecord, filters: RichblackExportFilter
   if (record.consentFormType !== "sample-space") return false;
   if (record.consentDecision !== "consented") return false;
   if (!["locked", "finalized"].includes(record.status || "")) return false;
-  if (!record.pdfFileKey && !record.pdfFile) return false;
-  if (!isAutoVerifiedConsent(record)) return false;
   if (filters.eso && record.esoName !== filters.eso && record.esoId !== filters.eso) return false;
   if (filters.from && record.consentDate < filters.from) return false;
   if (filters.to && record.consentDate > filters.to) return false;
