@@ -86,14 +86,20 @@ export default async function RecordsPage() {
         </form>
         {pdfCountsByEso.length > 0 && (
           <div className="export-batches">
-            <h3>Large PDF exports</h3>
+            <div>
+              <h3>Large PDF exports</h3>
+              <p className="field-hint">Large ESO exports are split into parts of {pdfBatchSize} PDFs. Download every part listed for that ESO to get the complete export.</p>
+            </div>
             {pdfCountsByEso.map((eso) => {
               const parts = Math.ceil(eso.count / pdfBatchSize);
 
               return (
                 <div className="export-batch-row" key={eso.name}>
                   <span>
-                    {eso.name}: {eso.count} PDFs
+                    <strong>{eso.name}</strong>
+                    <small>
+                      {eso.count} PDFs split into {parts} parts
+                    </small>
                   </span>
                   <div>
                     {Array.from({ length: parts }, (_, index) => (

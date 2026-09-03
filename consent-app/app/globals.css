@@ -632,6 +632,16 @@ input[type="file"] {
   align-items: start;
 }
 
+.export-batch-row span,
+.export-batch-row small {
+  display: block;
+}
+
+.export-batch-row small {
+  margin-top: 3px;
+  color: var(--muted);
+}
+
 .export-batch-row > div {
   display: flex;
   flex-wrap: wrap;
