@@ -763,7 +763,6 @@ export function ConsentForm({
                         type="button"
                         role="option"
                         className="participant-result"
-                        disabled={!participant.email}
                         onClick={() => selectParticipant(participant)}
                       >
                         <span>{participant.fullName}</span>
