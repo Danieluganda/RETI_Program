@@ -612,6 +612,37 @@ input[type="file"] {
   border-top: 1px solid var(--line);
 }
 
+.export-batches {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.export-batches h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.export-batch-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.export-batch-row > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.compact-link {
+  min-height: 0;
+  padding: 7px 10px;
+}
+
 .toolbar {
   align-items: flex-start;
   margin-bottom: 10px;

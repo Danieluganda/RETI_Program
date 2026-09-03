@@ -6,7 +6,8 @@ import { readPrivateFile } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
-const maxPdfExportRecords = Number(process.env.PDF_EXPORT_MAX_RECORDS || 200);
+const maxPdfExportRecords = Number(process.env.PDF_EXPORT_MAX_RECORDS || 2000);
+const defaultPdfBatchSize = Number(process.env.PDF_EXPORT_BATCH_SIZE || 200);
 
 function csvCell(value: unknown) {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;
@@ -23,12 +24,18 @@ function inDateRange(record: ConsentRecord, from?: string, to?: string) {
   return true;
 }
 
-function exportFileName(from?: string, to?: string, eso?: string) {
+function exportFileName(from?: string, to?: string, eso?: string, part?: number) {
   const esoPart = eso ? `${safeFolderName(eso)}-` : "";
-  if (from && to) return `10x-consent-pdfs-${esoPart}${from}_to_${to}.zip`;
-  if (from) return `10x-consent-pdfs-${esoPart}from-${from}.zip`;
-  if (to) return `10x-consent-pdfs-${esoPart}to-${to}.zip`;
-  return `10x-consent-pdfs-${esoPart}all.zip`;
+  const partSuffix = part ? `-part-${part}` : "";
+  if (from && to) return `10x-consent-pdfs-${esoPart}${from}_to_${to}${partSuffix}.zip`;
+  if (from) return `10x-consent-pdfs-${esoPart}from-${from}${partSuffix}.zip`;
+  if (to) return `10x-consent-pdfs-${esoPart}to-${to}${partSuffix}.zip`;
+  return `10x-consent-pdfs-${esoPart}all${partSuffix}.zip`;
+}
+
+function positiveInt(value: string | null, fallback = 0) {
+  const parsed = Number(value || "");
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 async function mapWithConcurrency<T, R>(items: T[], concurrency: number, mapper: (item: T) => Promise<R>) {
@@ -52,14 +59,26 @@ export async function GET(request: Request) {
   const from = url.searchParams.get("from") || undefined;
   const to = url.searchParams.get("to") || undefined;
   const eso = url.searchParams.get("eso") || "";
+  const part = positiveInt(url.searchParams.get("part"));
+  const batchSize = Math.min(positiveInt(url.searchParams.get("batchSize"), defaultPdfBatchSize), maxPdfExportRecords);
 
   const [allRecords, participants] = await Promise.all([getConsents(), getActiveParticipants()]);
   const participantsById = new Map(participants.map((participant) => [participant.id, participant]));
   const participantsByExternalId = new Map(participants.map((participant) => [participant.externalId, participant]));
-  const records = allRecords.filter((record) => {
-    const participant = participantsById.get(record.participantId) || participantsByExternalId.get(record.participantExternalId);
-    return Boolean(record.pdfFileKey && inDateRange(record, from, to) && (!eso || record.esoName === eso || participant?.esoName === eso));
-  });
+  const matchedRecords = allRecords
+    .filter((record) => {
+      const participant = participantsById.get(record.participantId) || participantsByExternalId.get(record.participantExternalId);
+      return Boolean(record.pdfFileKey && inDateRange(record, from, to) && (!eso || record.esoName === eso || participant?.esoName === eso));
+    })
+    .sort((a, b) => a.referenceNumber.localeCompare(b.referenceNumber));
+  const records = part ? matchedRecords.slice((part - 1) * batchSize, part * batchSize) : matchedRecords;
+
+  if (!records.length && matchedRecords.length) {
+    return Response.json(
+      { error: "PDF export part is empty", count: matchedRecords.length, part, batchSize },
+      { status: 404, headers: { "Cache-Control": "no-store" } },
+    );
+  }
 
   if (records.length > maxPdfExportRecords) {
     return Response.json(
@@ -67,7 +86,7 @@ export async function GET(request: Request) {
         error: "PDF export range is too large",
         count: records.length,
         max: maxPdfExportRecords,
-        message: `This date range contains ${records.length} PDFs. Please export a smaller date range with ${maxPdfExportRecords} PDFs or fewer.`,
+        message: `This date range contains ${records.length} PDFs. Please export by ESO/date range or use part and batchSize parameters.`,
       },
       {
         status: 413,
@@ -138,9 +157,12 @@ export async function GET(request: Request) {
   return new Response(body, {
     headers: {
       "Content-Type": "application/zip",
-      "Content-Disposition": `attachment; filename="${exportFileName(from, to, eso)}"`,
+      "Content-Disposition": `attachment; filename="${exportFileName(from, to, eso, part || undefined)}"`,
       "Cache-Control": "no-store",
       "X-Export-Record-Count": String(records.length),
+      "X-Export-Total-Matched-Count": String(matchedRecords.length),
+      "X-Export-Part": part ? String(part) : "",
+      "X-Export-Batch-Size": part ? String(batchSize) : "",
     },
   });
 }
