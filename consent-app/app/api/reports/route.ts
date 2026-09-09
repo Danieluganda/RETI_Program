@@ -1,4 +1,5 @@
 import { getConsents } from "@/lib/db";
+import { getCurrentConsents } from "@/lib/analytics";
 import { consentRecordedAt, formatConsentDateTime } from "@/lib/dateTime";
 import { poaSampleStatus } from "@/lib/poaSample";
 import { getActiveParticipants } from "@/lib/participants";
@@ -16,10 +17,12 @@ function safeFilePart(value: string) {
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const eso = url.searchParams.get("eso") || "";
+  const includeAll = url.searchParams.get("include") === "all";
   const [allRecords, participants] = await Promise.all([getConsents(), getActiveParticipants()]);
   const participantsById = new Map(participants.map((participant) => [participant.id, participant]));
   const participantsByExternalId = new Map(participants.map((participant) => [participant.externalId, participant]));
-  const records = allRecords.filter((record) => {
+  const exportableRecords = includeAll ? allRecords : [...getCurrentConsents(allRecords).values()];
+  const records = exportableRecords.filter((record) => {
     const participant = participantsById.get(record.participantId) || participantsByExternalId.get(record.participantExternalId);
     return !eso || record.esoName === eso || participant?.esoName === eso;
   });
@@ -68,6 +71,7 @@ export async function GET(request: Request) {
     "verificationCheckedAt",
     "pdfFileKey",
     "pdfGeneratedAt",
+    "supersededById",
     "status",
     "createdAt",
   ];
@@ -87,7 +91,14 @@ export async function GET(request: Request) {
   return new Response(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${eso ? `10x-consents-${safeFilePart(eso)}.csv` : "10x-consents.csv"}"`,
+      "Content-Disposition": `attachment; filename="${
+        eso
+          ? `10x-consents-${safeFilePart(eso)}${includeAll ? "-audit-all-rows" : ""}.csv`
+          : `10x-consents${includeAll ? "-audit-all-rows" : ""}.csv`
+      }"`,
+      "Cache-Control": "no-store",
+      "X-Export-Mode": includeAll ? "all_rows_audit" : "current_consents_only",
+      "X-Export-Record-Count": String(records.length),
     },
   });
 }
