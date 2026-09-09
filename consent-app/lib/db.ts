@@ -1,4 +1,4 @@
-import { PrismaClient, type Consent } from "@prisma/client";
+import { Prisma, PrismaClient, type Consent } from "@prisma/client";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { hasBlobStorage, readTextBlob, writeTextBlob } from "./storage";
@@ -66,6 +66,7 @@ export type ConsentRecord = {
   pdfFileKey: string;
   pdfGeneratedAt: string;
   pdfStatus: string;
+  supersededById?: string;
   status: "locked";
   createdAt: string;
 };
@@ -172,6 +173,7 @@ function toLegacyRecord(record: LegacyConsentRow): ConsentRecord {
     pdfFileKey: record.pdfFileKey || "",
     pdfGeneratedAt: formatDateTime(record.pdfGeneratedAt),
     pdfStatus: record.pdfStatus || (record.pdfFileKey ? "generated" : ""),
+    supersededById: "",
     status: "locked",
     createdAt: formatDateTime(record.createdAt),
   };
@@ -314,9 +316,14 @@ function toRecord(record: Consent): ConsentRecord {
     pdfFileKey: record.pdfFileKey || "",
     pdfGeneratedAt: record.pdfGeneratedAt?.toISOString() || "",
     pdfStatus: record.pdfStatus || "",
+    supersededById: record.supersededById || "",
     status: "locked",
     createdAt: record.createdAt.toISOString(),
   };
+}
+
+export function isUniqueConstraintError(error: unknown) {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
 }
 
 export async function getConsents() {
@@ -405,6 +412,7 @@ export async function saveConsent(record: ConsentRecord) {
         pdfFileKey: record.pdfFileKey,
         pdfGeneratedAt: record.pdfGeneratedAt ? new Date(record.pdfGeneratedAt) : null,
         pdfStatus: record.pdfStatus,
+        supersededById: record.supersededById || null,
         status: record.status,
         createdAt: new Date(record.createdAt),
       },
@@ -465,15 +473,36 @@ export async function getConsentById(id: string) {
   return records.find((record) => record.id === id || record.referenceNumber === id);
 }
 
-export async function getExistingParticipantConsent(participantId: string, consentFormType: string) {
+export async function getExistingParticipantConsent(
+  participantId: string,
+  consentFormType: string,
+  identity: { participantExternalId?: string; participantName?: string; esoName?: string; esoId?: string } = {},
+) {
   if (!participantId.trim()) return undefined;
+  const participantExternalId = identity.participantExternalId?.trim() || "";
+  const participantName = identity.participantName?.trim() || "";
+  const esoName = identity.esoName?.trim() || "";
+  const esoId = identity.esoId?.trim() || "";
+  const identityMatches: Prisma.ConsentWhereInput[] = [{ participantId }];
+
+  if (participantExternalId) {
+    identityMatches.push({ participantExternalId });
+  }
+
+  if (participantName && (esoName || esoId)) {
+    identityMatches.push({
+      participantName: { equals: participantName, mode: "insensitive" },
+      OR: [{ esoName }, ...(esoId ? [{ esoId }] : [])],
+    });
+  }
 
   if (usePrisma) {
     const record = await prisma().consent.findFirst({
       where: {
-        participantId,
+        OR: identityMatches,
         consentFormType,
         status: { in: ["locked", "finalized"] },
+        supersededById: null,
       },
       orderBy: { createdAt: "desc" },
     });
@@ -484,9 +513,16 @@ export async function getExistingParticipantConsent(participantId: string, conse
   return records
     .filter(
       (record) =>
-        record.participantId === participantId &&
+        (record.participantId === participantId ||
+          Boolean(participantExternalId && record.participantExternalId === participantExternalId) ||
+          Boolean(
+            participantName &&
+              record.participantName.toLowerCase() === participantName.toLowerCase() &&
+              ((esoName && record.esoName === esoName) || (esoId && record.esoId === esoId)),
+          )) &&
         record.consentFormType === consentFormType &&
-        ["locked", "finalized"].includes(record.status),
+        ["locked", "finalized"].includes(record.status) &&
+        !record.supersededById,
     )
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
 }

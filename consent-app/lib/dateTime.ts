@@ -8,6 +8,7 @@ export function formatConsentDateTime(value: string) {
   if (Number.isNaN(date.getTime())) return value;
 
   return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Africa/Kampala",
     day: "2-digit",
     month: "short",
     year: "numeric",

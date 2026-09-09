@@ -1,6 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { getConsents, getExistingParticipantConsent, nextReference, saveConsent, type ConsentRecord } from "@/lib/db";
+import {
+  getConsents,
+  getExistingParticipantConsent,
+  isUniqueConstraintError,
+  nextReference,
+  saveConsent,
+  type ConsentRecord,
+} from "@/lib/db";
 import { getParticipantForConsent } from "@/lib/participants";
 import { generateConsentPdf } from "@/lib/pdf";
 import { scoreConsentRisk } from "@/lib/riskScoring";
@@ -65,7 +72,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const existingConsent = await getExistingParticipantConsent(participant.id, body.consentFormType || "sample-space");
+  const existingConsent = await getExistingParticipantConsent(participant.id, body.consentFormType || "sample-space", {
+    participantExternalId: participant.externalId || "",
+    participantName: participant.fullName,
+    esoId: participant.esoId || "",
+    esoName: participant.eso?.name || participant.esoName || "",
+  });
   if (existingConsent) {
     return NextResponse.json(
       {
@@ -170,7 +182,36 @@ export async function POST(request: Request) {
   record.pdfGeneratedAt = pdf.pdfGeneratedAt;
   record.pdfStatus = "generated";
 
-  const savedRecord = await saveConsent(record);
+  let savedRecord: ConsentRecord;
+  try {
+    savedRecord = await saveConsent(record);
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      const existing = await getExistingParticipantConsent(participant.id, record.consentFormType, {
+        participantExternalId: participant.externalId || "",
+        participantName: participant.fullName,
+        esoId: participant.esoId || "",
+        esoName: participant.eso?.name || participant.esoName || "",
+      });
+
+      return NextResponse.json(
+        {
+          error: `Consent for ${participant.fullName} has already been submitted.`,
+          existingConsent: existing
+            ? {
+                id: existing.id,
+                referenceNumber: existing.referenceNumber,
+                participantName: existing.participantName,
+                consentDate: existing.consentDate,
+                consentFormType: existing.consentFormType,
+              }
+            : null,
+        },
+        { status: 409 },
+      );
+    }
+    throw error;
+  }
 
   return NextResponse.json(savedRecord, { status: 201 });
 }

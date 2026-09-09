@@ -195,6 +195,7 @@ export function ConsentForm({
   const [participantSearch, setParticipantSearch] = useState("");
   const [participantsLoading, setParticipantsLoading] = useState(false);
   const [duplicateConsent, setDuplicateConsent] = useState<{ referenceNumber: string; participantName: string } | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const template = consentTemplates[consentFormType];
   const isPartnerConsent = consentFormType === "third-party-data-sharing";
   const isSampleSpaceConsent = consentFormType === "sample-space";
@@ -387,6 +388,8 @@ export function ConsentForm({
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
     const form = event.currentTarget;
     const formData = new FormData(form);
     const body = Object.fromEntries(formData.entries());
@@ -439,6 +442,7 @@ export function ConsentForm({
     const data = await response.json();
     if (!response.ok) {
       setMessage(data.error || "Could not save consent.");
+      setSubmitting(false);
       if (response.status === 409 && data.existingConsent) {
         setDuplicateConsent({
           referenceNumber: data.existingConsent.referenceNumber,
@@ -894,8 +898,8 @@ export function ConsentForm({
             <button className="secondary" type="reset">
               Clear form
             </button>
-            <button className="primary" type="submit" disabled={Boolean(duplicateConsent)}>
-              {duplicateConsent ? "Consent already submitted" : "Submit completed form"}
+            <button className="primary" type="submit" disabled={Boolean(duplicateConsent) || submitting}>
+              {duplicateConsent ? "Consent already submitted" : submitting ? "Submitting..." : "Submit completed form"}
             </button>
           </div>
         </section>
