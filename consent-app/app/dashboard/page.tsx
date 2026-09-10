@@ -25,13 +25,6 @@ export default async function DashboardPage({
       ? "Live consent records are temporarily unavailable. Showing participant list without matched consent progress."
       : "";
 
-  if (recordsResult.status === "rejected") {
-    console.error("Dashboard could not read consent records", recordsResult.reason);
-  }
-  if (participantsResult.status === "rejected") {
-    console.error("Dashboard could not read participants", participantsResult.reason);
-  }
-
   const enrichedRecords = withConsentParticipantContext(records, participants);
   const esos = [...new Set(participants.map((participant) => participant.esoName).filter(Boolean))].sort((a, b) =>
     a.localeCompare(b),
