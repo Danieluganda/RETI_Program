@@ -3,8 +3,10 @@ import { AppShell } from "@/components/AppShell";
 import { ActionRequired, ConsentProgressByEso, DashboardSummaryCards } from "@/components/DashboardV2";
 import { RecordsTable } from "@/components/RecordsTable";
 import { getConsents } from "@/lib/db";
+import type { ConsentRecord } from "@/lib/db";
 import { withConsentParticipantContext } from "@/lib/poaSample";
 import { getActiveParticipants } from "@/lib/participants";
+import type { ParticipantSummary } from "@/lib/participants";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +17,21 @@ export default async function DashboardPage({
 }) {
   const params = await searchParams;
   const selectedEso = params.eso || "";
-  const [records, participants] = await Promise.all([getConsents(), getActiveParticipants()]);
+  const [recordsResult, participantsResult] = await Promise.allSettled([getConsents(), getActiveParticipants()]);
+  const records: ConsentRecord[] = recordsResult.status === "fulfilled" ? recordsResult.value : [];
+  const participants: ParticipantSummary[] = participantsResult.status === "fulfilled" ? participantsResult.value : [];
+  const dataWarning =
+    recordsResult.status === "rejected"
+      ? "Live consent records are temporarily unavailable. Showing participant list without matched consent progress."
+      : "";
+
+  if (recordsResult.status === "rejected") {
+    console.error("Dashboard could not read consent records", recordsResult.reason);
+  }
+  if (participantsResult.status === "rejected") {
+    console.error("Dashboard could not read participants", participantsResult.reason);
+  }
+
   const enrichedRecords = withConsentParticipantContext(records, participants);
   const esos = [...new Set(participants.map((participant) => participant.esoName).filter(Boolean))].sort((a, b) =>
     a.localeCompare(b),
@@ -41,6 +57,7 @@ export default async function DashboardPage({
           Bulk export
         </Link>
       </header>
+      {dataWarning ? <div className="error-state">{dataWarning}</div> : null}
       <section className="panel">
         <form className="export-form dashboard-filter-form" action="/dashboard" method="get">
           <div>

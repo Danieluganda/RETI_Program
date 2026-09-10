@@ -259,11 +259,12 @@ export function ConsentForm({
     if (!initialParticipantId || !selectedEsoName || selectedParticipantId) return;
 
     let active = true;
-    const params = selectedEsoId
-      ? `esoId=${encodeURIComponent(selectedEsoId)}&participantId=${encodeURIComponent(initialParticipantId)}`
-      : `eso=${encodeURIComponent(selectedEsoName)}&participantId=${encodeURIComponent(initialParticipantId)}`;
+    const params = new URLSearchParams();
+    if (selectedEsoId) params.set("esoId", selectedEsoId);
+    if (selectedEsoName) params.set("eso", selectedEsoName);
+    params.set("participantId", initialParticipantId);
 
-    fetch(`/api/participants?${params}`)
+    fetch(`/api/participants?${params.toString()}`)
       .then((response) => response.json())
       .then((data) => {
         if (!active) return;
@@ -292,11 +293,13 @@ export function ConsentForm({
     const controller = new AbortController();
     const timeout = window.setTimeout(() => {
       setParticipantsLoading(true);
-      const params = selectedEsoId
-        ? `esoId=${encodeURIComponent(selectedEsoId)}&q=${encodeURIComponent(query)}&limit=5000`
-        : `eso=${encodeURIComponent(selectedEsoName)}&q=${encodeURIComponent(query)}&limit=5000`;
+      const params = new URLSearchParams();
+      if (selectedEsoId) params.set("esoId", selectedEsoId);
+      if (selectedEsoName) params.set("eso", selectedEsoName);
+      params.set("q", query);
+      params.set("limit", "5000");
 
-      fetch(`/api/participants?${params}`, { signal: controller.signal })
+      fetch(`/api/participants?${params.toString()}`, { signal: controller.signal })
         .then((response) => response.json())
         .then((data) => {
           setParticipants(data.participants || []);

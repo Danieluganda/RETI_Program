@@ -49,7 +49,9 @@ export function validateConsentPayload(payload: ConsentPayload) {
   const errors: string[] = [];
 
   if (!payload.participantId?.trim()) errors.push("Participant selection is required.");
-  if (!payload.esoId?.trim()) errors.push("Entrepreneurship Support Organization is required.");
+  if (!payload.esoId?.trim() && !payload.esoName?.trim()) {
+    errors.push("Entrepreneurship Support Organization is required.");
+  }
   if (!payload.consentDecision || !["consented", "declined"].includes(payload.consentDecision)) {
     errors.push("Consent decision must be consented or declined.");
   }

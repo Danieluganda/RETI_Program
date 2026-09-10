@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: errors.join(" ") }, { status: 422 });
   }
 
-  const participant = await getParticipantForConsent(body.participantId || "", body.esoId || "");
+  const participant = await getParticipantForConsent(body.participantId || "", body.esoId || body.esoName || "");
   if (!participant) {
     return NextResponse.json(
       { error: "Selected participant is invalid, inactive, or does not belong to the selected ESO." },

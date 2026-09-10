@@ -698,6 +698,11 @@ td {
   padding: 3px 8px;
 }
 
+.warning-tag {
+  background: #fff3e8;
+  color: #9a3412;
+}
+
 .muted-text {
   color: var(--muted);
 }
@@ -882,6 +887,206 @@ td {
   margin-top: 12px;
 }
 
+.activity-page {
+  display: grid;
+  gap: 16px;
+  max-width: 1560px;
+  margin: 0 auto;
+}
+
+.activity-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 4px;
+}
+
+.activity-header h1 {
+  margin: 0 0 4px;
+  font-size: 1.55rem;
+  line-height: 1.15;
+}
+
+.activity-header p,
+.activity-source-note span {
+  margin: 0;
+  color: var(--muted);
+}
+
+.activity-download {
+  min-width: 132px;
+  min-height: 38px;
+  white-space: nowrap;
+}
+
+.activity-toolbar,
+.activity-panel,
+.activity-metric {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.activity-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+}
+
+.activity-filter-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.activity-filter-field {
+  min-width: 210px;
+  margin: 0;
+}
+
+.activity-filter-field span {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.activity-filter-field select {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 5px 34px 5px 10px;
+}
+
+.activity-source-note {
+  display: grid;
+  gap: 2px;
+  min-width: 180px;
+  text-align: right;
+}
+
+.activity-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.activity-metric {
+  min-height: 78px;
+  padding: 11px 14px;
+}
+
+.activity-metric span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.activity-metric strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 1.55rem;
+  line-height: 1;
+}
+
+.activity-metric.warning strong,
+.daily-update-card.warning strong {
+  color: var(--danger);
+}
+
+.activity-panel {
+  overflow: hidden;
+  padding: 0;
+}
+
+.activity-panel > .section-heading {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  margin: 0;
+  padding: 12px 16px;
+}
+
+.activity-panel > .section-heading h2 {
+  font-size: 1.25rem;
+}
+
+.activity-panel > .section-heading p {
+  font-size: 0.92rem;
+}
+
+.daily-update-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px 16px;
+}
+
+.daily-update-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fbfcfc;
+  padding: 9px 11px;
+}
+
+.daily-update-card strong {
+  color: var(--accent-dark);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.daily-update-card span {
+  color: #314553;
+  font-size: 0.88rem;
+}
+
+.activity-table table {
+  min-width: 1580px;
+}
+
+.activity-table th,
+.activity-table td {
+  padding: 9px 8px;
+  font-size: 0.84rem;
+  vertical-align: top;
+}
+
+.activity-table th {
+  background: #f7faf8;
+  color: #405466;
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.activity-table tr:hover td {
+  background: #fbfcfc;
+}
+
+.activity-pagination {
+  align-items: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.activity-panel > .activity-pagination {
+  justify-content: flex-end;
+  border-top: 1px solid var(--line);
+  padding: 12px 16px;
+}
+
 @media (max-width: 900px) {
   .shell,
   .cards,
@@ -939,5 +1144,23 @@ td {
     display: block;
     width: 100%;
     margin: 6px 0;
+  }
+
+  .activity-header,
+  .activity-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .activity-source-note {
+    text-align: left;
+  }
+
+  .daily-update-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .activity-pagination {
+    white-space: normal;
   }
 }
