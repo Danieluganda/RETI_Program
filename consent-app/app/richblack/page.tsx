@@ -15,7 +15,12 @@ function displayDate(value: string) {
 }
 
 export default async function RichblackPage() {
-  const records = await getConsents();
+  const recordsResult = await Promise.allSettled([getConsents()]);
+  const records = recordsResult[0].status === "fulfilled" ? recordsResult[0].value : [];
+  const dataWarning =
+    recordsResult[0].status === "rejected"
+      ? "Live consent records are temporarily unavailable from this environment. Showing the gate without matched consent data."
+      : "";
   const gate = await getRichblackGate(records);
   const previewRows = gate.shareableRows.slice(0, 100);
 
@@ -32,6 +37,7 @@ export default async function RichblackPage() {
           </a>
         </div>
       </header>
+      {dataWarning ? <div className="error-state">{dataWarning}</div> : null}
 
       <section className="cards richblack-cards" aria-label="Richblack sharing summary">
         <div className="metric">

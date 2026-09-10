@@ -1,8 +1,10 @@
 import { AppShell } from "@/components/AppShell";
 import { RecordsTable } from "@/components/RecordsTable";
 import { getConsents } from "@/lib/db";
+import type { ConsentRecord } from "@/lib/db";
 import { withConsentParticipantContext } from "@/lib/poaSample";
 import { getActiveEsos, getActiveParticipants } from "@/lib/participants";
+import type { ParticipantSummary } from "@/lib/participants";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +15,18 @@ function pdfExportHref(eso: string, part: number) {
 }
 
 export default async function RecordsPage() {
-  const [records, esos, participants] = await Promise.all([getConsents(), getActiveEsos(), getActiveParticipants()]);
+  const [recordsResult, esosResult, participantsResult] = await Promise.allSettled([
+    getConsents(),
+    getActiveEsos(),
+    getActiveParticipants(),
+  ]);
+  const records: ConsentRecord[] = recordsResult.status === "fulfilled" ? recordsResult.value : [];
+  const esos: Awaited<ReturnType<typeof getActiveEsos>> = esosResult.status === "fulfilled" ? esosResult.value : [];
+  const participants: ParticipantSummary[] = participantsResult.status === "fulfilled" ? participantsResult.value : [];
+  const dataWarning =
+    recordsResult.status === "rejected" || esosResult.status === "rejected" || participantsResult.status === "rejected"
+      ? "Live records are temporarily unavailable from this environment. The page is loaded without matched live data."
+      : "";
   const enrichedRecords = withConsentParticipantContext(records, participants);
   const pdfCountsByEso = esos
     .map((eso) => ({
@@ -42,6 +55,7 @@ export default async function RecordsPage() {
         </div>
       </header>
       <section className="panel export-panel">
+        {dataWarning ? <div className="error-state">{dataWarning}</div> : null}
         <h2>Export PDFs by ESO and Consent Date</h2>
         <p className="field-hint">PDF exports are capped at 2,000 files per ZIP. Select an ESO or shorter date range for very large batches.</p>
         <form className="export-form" action="/api/exports/pdfs" method="get">

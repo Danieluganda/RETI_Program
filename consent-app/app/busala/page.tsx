@@ -15,8 +15,24 @@ function displayDate(value: string) {
 }
 
 export default async function BusalaPage() {
-  const records = await getConsents();
-  const gate = await getBusalaGate(records);
+  let dataWarning = "";
+  const recordsResult = await Promise.allSettled([getConsents()]);
+  const records = recordsResult[0].status === "fulfilled" ? recordsResult[0].value : [];
+  let gate = await getBusalaGate(records).catch(() => null);
+  if (recordsResult[0].status === "rejected" || !gate) {
+    dataWarning =
+      "Live consent records are temporarily unavailable from this environment. Showing the gate without matched consent data.";
+    gate = {
+      datasets: [],
+      shareableRows: [],
+      summary: {
+        totalRows: 0,
+        shareableRows: 0,
+        pendingRows: 0,
+        exportedAt: new Date().toISOString(),
+      },
+    };
+  }
   const previewRows = gate.shareableRows.slice(0, 100);
 
   return (
@@ -32,6 +48,7 @@ export default async function BusalaPage() {
           </a>
         </div>
       </header>
+      {dataWarning ? <div className="error-state">{dataWarning}</div> : null}
 
       <section className="cards richblack-cards" aria-label="Busala sharing summary">
         <div className="metric">
