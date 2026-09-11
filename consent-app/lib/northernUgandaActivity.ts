@@ -310,6 +310,7 @@ function participantIndexes(participants: ParticipantSummary[]) {
   const byExternalId = new Map<string, ParticipantSummary[]>();
   const byPhone = new Map<string, ParticipantSummary[]>();
   const byNameEso = new Map<string, ParticipantSummary[]>();
+  const byName = new Map<string, ParticipantSummary[]>();
 
   function add(index: Map<string, ParticipantSummary[]>, key: string, participant: ParticipantSummary) {
     if (!key) return;
@@ -322,10 +323,11 @@ function participantIndexes(participants: ParticipantSummary[]) {
     if (phoneQuality(participant.phone).usable) add(byPhone, normalizePhone(participant.phone), participant);
     const name = normalizeKey(participant.fullName);
     const eso = normalizeKey(participant.esoName);
+    add(byName, name, participant);
     if (name && eso) add(byNameEso, `${name}|${eso}`, participant);
   }
 
-  return { byEmail, byExternalId, byPhone, byNameEso };
+  return { byEmail, byExternalId, byPhone, byNameEso, byName };
 }
 
 function matchParticipants(values: Record<string, string>, indexes: ReturnType<typeof participantIndexes>, fallbackEso: string) {
@@ -346,6 +348,9 @@ function matchParticipants(values: Record<string, string>, indexes: ReturnType<t
   const phone = normalizePhone(sourcePhone);
   const byPhone = phone && phoneQuality(sourcePhone).usable ? indexes.byPhone.get(phone) : undefined;
   if (byPhone?.length) return { participants: byPhone, matchedBy: "valid phone" };
+
+  const byName = name ? indexes.byName.get(name) : undefined;
+  if (byName?.length) return { participants: byName, matchedBy: "participant name only" };
 
   return { participants: [], matchedBy: "" };
 }
@@ -516,10 +521,10 @@ export async function getNorthernUgandaActivityGate(
     const declinedConsent = consent?.consentDecision === "declined";
     const mainParticipantStatus =
       matchedParticipants.length > 1
-        ? "Duplicate in main dataset"
+        ? "Multiple possible main matches"
         : primaryParticipant
-          ? "Found in main dataset"
-          : "Missing from main dataset";
+          ? "Matched in main dataset"
+          : "No current main match";
 
     return {
       sourceFile: source.sourceFile,
@@ -529,7 +534,7 @@ export async function getNorthernUgandaActivityGate(
       mainParticipantId: primaryParticipant?.id || "",
       mainParticipantSource: primaryParticipant?.source || "",
       mainParticipantMatches: matchedParticipants.length,
-      consentRouteStatus: primaryParticipant ? "Ready for /consent/new" : "Needs import before /consent/new",
+      consentRouteStatus: primaryParticipant ? "Can use /consent/new" : "Needs matching review before /consent/new",
       esoName: esoName(source.values, source.expectedEso),
       participantReference: firstValue(source.values, ["Unique identifier", "Unique Key", "Enterprise Unique Identifier", "UNIQUE KEY"]),
       participantName: fullName(source.values),

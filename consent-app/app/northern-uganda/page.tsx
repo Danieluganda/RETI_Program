@@ -208,11 +208,11 @@ export default async function NorthernUgandaActivityPage({
           <div className="daily-update-grid">
             <div className="daily-update-card">
               <strong>{gate.summary.readyForConsentRoute}</strong>
-              <span>Can use the original /consent/new route</span>
+              <span>Matched and can use /consent/new</span>
             </div>
             <div className="daily-update-card warning">
               <strong>{gate.summary.missingFromMainDataset}</strong>
-              <span>Need import/sync into main participant dataset</span>
+              <span>Need matching review or possible import</span>
             </div>
             <div className="daily-update-card">
               <strong>{gate.summary.reached}</strong>
@@ -228,7 +228,7 @@ export default async function NorthernUgandaActivityPage({
             </div>
             <div className="daily-update-card warning">
               <strong>{gate.summary.duplicateMainMatches}</strong>
-              <span>Duplicate matches found in main dataset</span>
+              <span>Multiple possible main dataset matches</span>
             </div>
           </div>
         </section>
