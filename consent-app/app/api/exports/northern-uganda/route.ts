@@ -1,3 +1,4 @@
+import { withTimeout } from "@/lib/asyncTimeout";
 import { getConsents } from "@/lib/db";
 import { getNorthernUgandaActivityGate, northernUgandaActivityCsv } from "@/lib/northernUgandaActivity";
 import type { ConsentRecord } from "@/lib/db";
@@ -15,7 +16,10 @@ export async function GET(request: Request) {
   let consentMatchStatus = "matched";
   let participantMatchStatus = "matched";
 
-  const [recordsResult, participantsResult] = await Promise.allSettled([getConsents(), getActiveParticipants()]);
+  const [recordsResult, participantsResult] = await Promise.allSettled([
+    withTimeout(getConsents()),
+    withTimeout(getActiveParticipants()),
+  ]);
   if (recordsResult.status === "fulfilled") {
     consentRecords = recordsResult.value;
   } else {

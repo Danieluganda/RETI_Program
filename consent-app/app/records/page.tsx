@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import { RecordsTable } from "@/components/RecordsTable";
+import { withTimeout } from "@/lib/asyncTimeout";
 import { getConsents } from "@/lib/db";
 import type { ConsentRecord } from "@/lib/db";
 import { withConsentParticipantContext } from "@/lib/poaSample";
@@ -16,9 +17,9 @@ function pdfExportHref(eso: string, part: number) {
 
 export default async function RecordsPage() {
   const [recordsResult, esosResult, participantsResult] = await Promise.allSettled([
-    getConsents(),
-    getActiveEsos(),
-    getActiveParticipants(),
+    withTimeout(getConsents()),
+    withTimeout(getActiveEsos()),
+    withTimeout(getActiveParticipants()),
   ]);
   const records: ConsentRecord[] = recordsResult.status === "fulfilled" ? recordsResult.value : [];
   const esos: Awaited<ReturnType<typeof getActiveEsos>> = esosResult.status === "fulfilled" ? esosResult.value : [];

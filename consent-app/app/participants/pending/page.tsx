@@ -1,6 +1,7 @@
 import { AppShell } from "@/components/AppShell";
 import { PendingParticipantsTable } from "@/components/PendingParticipantsTable";
 import { getPendingParticipants } from "@/lib/analytics";
+import { withTimeout } from "@/lib/asyncTimeout";
 import { getConsents } from "@/lib/db";
 import type { ConsentRecord } from "@/lib/db";
 import { getActiveParticipants } from "@/lib/participants";
@@ -14,7 +15,10 @@ export default async function PendingParticipantsPage({
   searchParams: Promise<{ eso?: string }>;
 }) {
   const params = await searchParams;
-  const [recordsResult, participantsResult] = await Promise.allSettled([getConsents(), getActiveParticipants()]);
+  const [recordsResult, participantsResult] = await Promise.allSettled([
+    withTimeout(getConsents()),
+    withTimeout(getActiveParticipants()),
+  ]);
   const records: ConsentRecord[] = recordsResult.status === "fulfilled" ? recordsResult.value : [];
   const participants: ParticipantSummary[] = participantsResult.status === "fulfilled" ? participantsResult.value : [];
   const dataWarning =

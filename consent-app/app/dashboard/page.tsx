@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { ActionRequired, ConsentProgressByEso, DashboardSummaryCards } from "@/components/DashboardV2";
 import { RecordsTable } from "@/components/RecordsTable";
+import { withTimeout } from "@/lib/asyncTimeout";
 import { getConsents } from "@/lib/db";
 import type { ConsentRecord } from "@/lib/db";
 import { withConsentParticipantContext } from "@/lib/poaSample";
@@ -17,7 +18,10 @@ export default async function DashboardPage({
 }) {
   const params = await searchParams;
   const selectedEso = params.eso || "";
-  const [recordsResult, participantsResult] = await Promise.allSettled([getConsents(), getActiveParticipants()]);
+  const [recordsResult, participantsResult] = await Promise.allSettled([
+    withTimeout(getConsents()),
+    withTimeout(getActiveParticipants()),
+  ]);
   const records: ConsentRecord[] = recordsResult.status === "fulfilled" ? recordsResult.value : [];
   const participants: ParticipantSummary[] = participantsResult.status === "fulfilled" ? participantsResult.value : [];
   const dataWarning =

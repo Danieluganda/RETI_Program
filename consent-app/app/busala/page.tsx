@@ -1,5 +1,6 @@
 import { BusalaShell } from "@/components/BusalaShell";
 import { busalaRowDistrict, busalaRowName, busalaRowPartner, busalaRowPhone, getBusalaGate } from "@/lib/busalaExport";
+import { withTimeout } from "@/lib/asyncTimeout";
 import { getConsents } from "@/lib/db";
 import { formatConsentDateTime } from "@/lib/dateTime";
 
@@ -16,7 +17,7 @@ function displayDate(value: string) {
 
 export default async function BusalaPage() {
   let dataWarning = "";
-  const recordsResult = await Promise.allSettled([getConsents()]);
+  const recordsResult = await Promise.allSettled([withTimeout(getConsents())]);
   const records = recordsResult[0].status === "fulfilled" ? recordsResult[0].value : [];
   let gate = await getBusalaGate(records).catch(() => null);
   if (recordsResult[0].status === "rejected" || !gate) {

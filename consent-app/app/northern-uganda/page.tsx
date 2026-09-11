@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/AppShell";
+import { withTimeout } from "@/lib/asyncTimeout";
 import { getConsents } from "@/lib/db";
 import { formatConsentDateTime } from "@/lib/dateTime";
 import { getNorthernUgandaActivityGate } from "@/lib/northernUgandaActivity";
@@ -36,7 +37,10 @@ export default async function NorthernUgandaActivityPage({
   let consentMatchStatus = "Live consent records matched";
   let participantMatchStatus = "Main participant dataset checked";
 
-  const [recordsResult, participantsResult] = await Promise.allSettled([getConsents(), getActiveParticipants()]);
+  const [recordsResult, participantsResult] = await Promise.allSettled([
+    withTimeout(getConsents()),
+    withTimeout(getActiveParticipants()),
+  ]);
   if (recordsResult.status === "fulfilled") {
     consentRecords = recordsResult.value;
   } else {

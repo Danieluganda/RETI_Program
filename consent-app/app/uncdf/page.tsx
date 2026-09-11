@@ -1,4 +1,5 @@
 import { UncdfShell } from "@/components/UncdfShell";
+import { withTimeout } from "@/lib/asyncTimeout";
 import { getConsents } from "@/lib/db";
 import { formatConsentDateTime } from "@/lib/dateTime";
 import { getUncdfGate } from "@/lib/uncdfExport";
@@ -16,7 +17,7 @@ function displayDate(value: string) {
 
 export default async function UncdfPage() {
   let dataWarning = "";
-  const recordsResult = await Promise.allSettled([getConsents()]);
+  const recordsResult = await Promise.allSettled([withTimeout(getConsents())]);
   const records = recordsResult[0].status === "fulfilled" ? recordsResult[0].value : [];
   let gate = await getUncdfGate(records).catch(() => null);
   if (recordsResult[0].status === "rejected" || !gate) {

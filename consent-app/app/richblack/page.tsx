@@ -1,4 +1,5 @@
 import { RichblackShell } from "@/components/RichblackShell";
+import { withTimeout } from "@/lib/asyncTimeout";
 import { getConsents } from "@/lib/db";
 import { formatConsentDateTime } from "@/lib/dateTime";
 import { getRichblackGate } from "@/lib/richblackExport";
@@ -15,7 +16,7 @@ function displayDate(value: string) {
 }
 
 export default async function RichblackPage() {
-  const recordsResult = await Promise.allSettled([getConsents()]);
+  const recordsResult = await Promise.allSettled([withTimeout(getConsents())]);
   const records = recordsResult[0].status === "fulfilled" ? recordsResult[0].value : [];
   const dataWarning =
     recordsResult[0].status === "rejected"

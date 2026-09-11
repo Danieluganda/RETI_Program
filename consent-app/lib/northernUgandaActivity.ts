@@ -171,6 +171,14 @@ function sheetPathFromTarget(target: string) {
   return `xl/${target.replace(/^\//, "")}`;
 }
 
+function xmlAttributes(xml: string) {
+  const attributes = new Map<string, string>();
+  for (const match of xml.matchAll(/([\w:.-]+)="([^"]*)"/g)) {
+    attributes.set(match[1], decodeXml(match[2]));
+  }
+  return attributes;
+}
+
 function valueFromCell(cellXml: string, sharedStrings: string[]) {
   const valueMatch = cellXml.match(/<v>([\s\S]*?)<\/v>/);
   const inlineMatch = cellXml.match(/<is>[\s\S]*?<t(?:\s[^>]*)?>([\s\S]*?)<\/t>[\s\S]*?<\/is>/);
@@ -345,15 +353,21 @@ async function workbookSheets(zip: JSZip, sourceFileName: string) {
   if (!workbookXml || !relationshipsXml) throw new Error(`${sourceFileName} is missing workbook metadata.`);
 
   const relationships = new Map<string, string>();
-  for (const match of relationshipsXml.matchAll(/<Relationship\b[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"/g)) {
-    relationships.set(match[1], match[2]);
+  for (const match of relationshipsXml.matchAll(/<Relationship\b[^>]*\/?>/g)) {
+    const attributes = xmlAttributes(match[0]);
+    const id = attributes.get("Id") || "";
+    const target = attributes.get("Target") || "";
+    if (id && target) relationships.set(id, target);
   }
 
-  return [...workbookXml.matchAll(/<sheet\b[^>]*name="([^"]+)"[^>]*r:id="([^"]+)"/g)]
-    .map((match) => ({
-      name: decodeXml(match[1]),
-      path: relationships.get(match[2]) || "",
-    }))
+  return [...workbookXml.matchAll(/<sheet\b[^>]*\/?>/g)]
+    .map((match) => {
+      const attributes = xmlAttributes(match[0]);
+      return {
+        name: attributes.get("name") || "",
+        path: relationships.get(attributes.get("r:id") || "") || "",
+      };
+    })
     .filter((sheet) => sheet.path);
 }
 
