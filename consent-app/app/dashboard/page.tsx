@@ -42,20 +42,23 @@ export default async function DashboardPage({
 
   return (
     <AppShell>
-      <header className="topbar">
+      <div className="dashboard-page">
+      <header className="topbar dashboard-topbar">
         <div>
           <h1>{selectedEso ? `${selectedEso} Progress` : "Dashboard"}</h1>
           <p>10X Program consent collection overview by Entrepreneurship Support Organization.</p>
         </div>
-        <Link className="button primary" href="/consent/new">
-          New Consent
-        </Link>
-        <Link className="button secondary" href="/records">
-          Bulk export
-        </Link>
+        <div className="topbar-actions">
+          <Link className="button primary" href="/consent/new">
+            New Consent
+          </Link>
+          <Link className="button secondary" href="/records">
+            Bulk export
+          </Link>
+        </div>
       </header>
       {dataWarning ? <div className="error-state">{dataWarning}</div> : null}
-      <section className="panel">
+      <section className="panel dashboard-control-panel">
         <form className="export-form dashboard-filter-form" action="/dashboard" method="get">
           <div>
             <label htmlFor="dashboardEso">View progress for ESO</label>
@@ -85,6 +88,7 @@ export default async function DashboardPage({
         <h2>{selectedEso ? `Recent records for ${selectedEso}` : "Recent records"}</h2>
         <RecordsTable records={filteredRecords} compact />
       </section>
+      </div>
     </AppShell>
   );
 }
