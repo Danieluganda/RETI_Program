@@ -12,13 +12,15 @@ export function DashboardSummaryCards({
   records: ConsentRecord[];
 }) {
   const stats = getDashboardStats(participants, records);
+  const hasConsentRecords = records.length > 0;
+  const hasParticipantBaseline = participants.length > 0;
   const cards = [
-    ["Total Participants", stats.totalParticipants],
+    ["Total Participants", hasParticipantBaseline ? stats.totalParticipants : hasConsentRecords ? "Not synced" : 0],
     ["Consent Records", stats.consentRecords],
     ["Consented", stats.consented],
     ["Declined", stats.declined],
-    ["Pending Consent", stats.pendingConsent],
-    ["Consent Coverage", `${stats.coverage.toFixed(1)}%`],
+    ["Pending Consent", hasParticipantBaseline ? stats.pendingConsent : hasConsentRecords ? "N/A" : 0],
+    ["Consent Coverage", hasParticipantBaseline ? `${stats.coverage.toFixed(1)}%` : "N/A"],
   ];
 
   return (
@@ -41,13 +43,17 @@ export function ConsentProgressByEso({
   records: ConsentRecord[];
 }) {
   const rows = getEsoProgress(participants, records);
+  const hasParticipantBaseline = participants.length > 0;
 
   return (
     <section className="panel">
       <div className="section-heading">
         <div>
           <h2>Consent Progress by ESO</h2>
-          <p>Current finalized consent progress across active participants.</p>
+          <p>
+            Current finalized consent records by ESO
+            {hasParticipantBaseline ? " against the active participant baseline." : ". Participant baseline is not synced yet."}
+          </p>
         </div>
       </div>
       {rows.length ? (
@@ -71,14 +77,16 @@ export function ConsentProgressByEso({
                   <td>
                     <Link href={`/dashboard?eso=${encodeURIComponent(row.eso)}`}>{row.eso || "Unassigned"}</Link>
                   </td>
-                  <td>{row.totalParticipants}</td>
+                  <td>{row.totalParticipants || (row.consented || row.declined ? "Not synced" : 0)}</td>
                   <td>{row.consented}</td>
                   <td>{row.declined}</td>
-                  <td>{row.pending}</td>
-                  <td>{row.coverage.toFixed(1)}%</td>
+                  <td>{row.totalParticipants ? row.pending : row.consented || row.declined ? "N/A" : 0}</td>
+                  <td>{row.totalParticipants ? `${row.coverage.toFixed(1)}%` : "N/A"}</td>
                   <td>{row.lastConsentAt ? formatConsentDateTime(row.lastConsentAt) : "N/A"}</td>
                   <td>
-                    <Link href={`/participants/pending?eso=${encodeURIComponent(row.eso)}`}>Open pending</Link>
+                    <Link href={row.totalParticipants ? `/participants/pending?eso=${encodeURIComponent(row.eso)}` : `/records?eso=${encodeURIComponent(row.eso)}`}>
+                      {row.totalParticipants ? "Open pending" : "Review records"}
+                    </Link>
                   </td>
                 </tr>
               ))}
@@ -100,7 +108,18 @@ export function ActionRequired({
   records: ConsentRecord[];
 }) {
   const issues = getActionRequired(participants, records);
+  const hasConsentRecords = records.length > 0;
+  const hasParticipantBaseline = participants.length > 0;
   const items = [
+    ...(!hasParticipantBaseline && hasConsentRecords
+      ? [
+          {
+            count: records.length,
+            text: "consent records exist, but participant baseline is not synced",
+            href: "/records",
+          },
+        ]
+      : []),
     {
       count: issues.pendingParticipants,
       text: "participants are pending consent",
