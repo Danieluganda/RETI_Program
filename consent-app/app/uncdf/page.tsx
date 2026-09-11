@@ -16,13 +16,10 @@ function displayDate(value: string) {
 }
 
 export default async function UncdfPage() {
-  let dataWarning = "";
   const recordsResult = await Promise.allSettled([withTimeout(getConsents())]);
   const records = recordsResult[0].status === "fulfilled" ? recordsResult[0].value : [];
   let gate = await getUncdfGate(records).catch(() => null);
   if (recordsResult[0].status === "rejected" || !gate) {
-    dataWarning =
-      "Live consent records are temporarily unavailable from this environment. Showing the gate without matched consent data.";
     gate = {
       rows: [],
       shareableRows: [],
@@ -38,20 +35,20 @@ export default async function UncdfPage() {
 
   return (
     <UncdfShell>
-      <header className="topbar">
-        <div>
-          <h1>UNCDF Data Gate</h1>
-          <p>All current participants whose consent has been recorded as consented.</p>
-        </div>
-        <div className="records-actions">
-          <a className="button secondary" href="/api/exports/uncdf" download>
-            Download consented data
-          </a>
-        </div>
-      </header>
-      {dataWarning ? <div className="error-state">{dataWarning}</div> : null}
+      <div className="gate-page">
+        <header className="topbar records-topbar">
+          <div>
+            <h1>UNCDF Data Gate</h1>
+            <p>All current participants whose consent has been recorded as consented.</p>
+          </div>
+          <div className="records-actions">
+            <a className="button secondary" href="/api/exports/uncdf" download>
+              Download consented data
+            </a>
+          </div>
+        </header>
 
-      <section className="cards richblack-cards" aria-label="UNCDF sharing summary">
+        <section className="cards richblack-cards" aria-label="UNCDF sharing summary">
         <div className="metric">
           <span>Consented records</span>
           <strong>{gate.summary.totalRows}</strong>
@@ -68,9 +65,9 @@ export default async function UncdfPage() {
           <span>Last checked</span>
           <strong className="compact-metric">{displayDate(gate.summary.exportedAt)}</strong>
         </div>
-      </section>
+        </section>
 
-      <section className="panel">
+        <section className="panel">
         <div className="section-heading">
           <div>
             <h2>Consented Participants</h2>
@@ -114,7 +111,8 @@ export default async function UncdfPage() {
             </tbody>
           </table>
         </div>
-      </section>
+        </section>
+      </div>
     </UncdfShell>
   );
 }

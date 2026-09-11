@@ -21,24 +21,21 @@ export default async function PendingParticipantsPage({
   ]);
   const records: ConsentRecord[] = recordsResult.status === "fulfilled" ? recordsResult.value : [];
   const participants: ParticipantSummary[] = participantsResult.status === "fulfilled" ? participantsResult.value : [];
-  const dataWarning =
-    recordsResult.status === "rejected" || participantsResult.status === "rejected"
-      ? "Live participant records are temporarily unavailable from this environment."
-      : "";
   const pending = getPendingParticipants(participants, records, { eso: params.eso || "" });
 
   return (
     <AppShell>
-      <header className="topbar">
-        <div>
-          <h1>Pending Participants</h1>
-          <p>Participants who do not yet have a current finalized consent decision.</p>
-        </div>
-      </header>
-      {dataWarning ? <div className="error-state">{dataWarning}</div> : null}
-      <section className="panel">
-        <PendingParticipantsTable participants={pending} initialEso={params.eso || ""} />
-      </section>
+      <div className="records-page">
+        <header className="topbar records-topbar">
+          <div>
+            <h1>Pending Participants</h1>
+            <p>Participants who do not yet have a current finalized consent decision.</p>
+          </div>
+        </header>
+        <section className="panel records-table-panel">
+          <PendingParticipantsTable participants={pending} initialEso={params.eso || ""} />
+        </section>
+      </div>
     </AppShell>
   );
 }

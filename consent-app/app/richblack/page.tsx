@@ -18,29 +18,25 @@ function displayDate(value: string) {
 export default async function RichblackPage() {
   const recordsResult = await Promise.allSettled([withTimeout(getConsents())]);
   const records = recordsResult[0].status === "fulfilled" ? recordsResult[0].value : [];
-  const dataWarning =
-    recordsResult[0].status === "rejected"
-      ? "Live consent records are temporarily unavailable from this environment. Showing the gate without matched consent data."
-      : "";
   const gate = await getRichblackGate(records);
   const previewRows = gate.shareableRows.slice(0, 100);
 
   return (
     <RichblackShell>
-      <header className="topbar">
-        <div>
-          <h1>Richblack Data Gate</h1>
-          <p>Device-financing participants available only after signed consent is verified.</p>
-        </div>
-        <div className="records-actions">
-          <a className="button secondary" href="/api/exports/richblack" download>
-            Download consented data
-          </a>
-        </div>
-      </header>
-      {dataWarning ? <div className="error-state">{dataWarning}</div> : null}
+      <div className="gate-page">
+        <header className="topbar records-topbar">
+          <div>
+            <h1>Richblack Data Gate</h1>
+            <p>Device-financing participants available only after signed consent is verified.</p>
+          </div>
+          <div className="records-actions">
+            <a className="button secondary" href="/api/exports/richblack" download>
+              Download consented data
+            </a>
+          </div>
+        </header>
 
-      <section className="cards richblack-cards" aria-label="Richblack sharing summary">
+        <section className="cards richblack-cards" aria-label="Richblack sharing summary">
         <div className="metric">
           <span>Device dataset</span>
           <strong>{gate.summary.totalRows}</strong>
@@ -57,9 +53,9 @@ export default async function RichblackPage() {
           <span>Last checked</span>
           <strong className="compact-metric">{displayDate(gate.summary.exportedAt)}</strong>
         </div>
-      </section>
+        </section>
 
-      <section className="panel">
+        <section className="panel">
         <div className="section-heading">
           <div>
             <h2>Consented Participants</h2>
@@ -103,7 +99,8 @@ export default async function RichblackPage() {
             </tbody>
           </table>
         </div>
-      </section>
+        </section>
+      </div>
     </RichblackShell>
   );
 }

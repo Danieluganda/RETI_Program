@@ -16,13 +16,10 @@ function displayDate(value: string) {
 }
 
 export default async function BusalaPage() {
-  let dataWarning = "";
   const recordsResult = await Promise.allSettled([withTimeout(getConsents())]);
   const records = recordsResult[0].status === "fulfilled" ? recordsResult[0].value : [];
   let gate = await getBusalaGate(records).catch(() => null);
   if (recordsResult[0].status === "rejected" || !gate) {
-    dataWarning =
-      "Live consent records are temporarily unavailable from this environment. Showing the gate without matched consent data.";
     gate = {
       datasets: [],
       shareableRows: [],
@@ -38,20 +35,20 @@ export default async function BusalaPage() {
 
   return (
     <BusalaShell>
-      <header className="topbar">
-        <div>
-          <h1>Busala Data Gate</h1>
-          <p>Sample dataset participants available only after signed consent is verified.</p>
-        </div>
-        <div className="records-actions">
-          <a className="button secondary" href="/api/exports/busala" download>
-            Download consented data
-          </a>
-        </div>
-      </header>
-      {dataWarning ? <div className="error-state">{dataWarning}</div> : null}
+      <div className="gate-page">
+        <header className="topbar records-topbar">
+          <div>
+            <h1>Busala Data Gate</h1>
+            <p>Sample dataset participants available only after signed consent is verified.</p>
+          </div>
+          <div className="records-actions">
+            <a className="button secondary" href="/api/exports/busala" download>
+              Download consented data
+            </a>
+          </div>
+        </header>
 
-      <section className="cards richblack-cards" aria-label="Busala sharing summary">
+        <section className="cards richblack-cards" aria-label="Busala sharing summary">
         <div className="metric">
           <span>Sample dataset</span>
           <strong>{gate.summary.totalRows}</strong>
@@ -68,9 +65,9 @@ export default async function BusalaPage() {
           <span>Last checked</span>
           <strong className="compact-metric">{displayDate(gate.summary.exportedAt)}</strong>
         </div>
-      </section>
+        </section>
 
-      <section className="panel">
+        <section className="panel">
         <div className="section-heading">
           <div>
             <h2>Dataset Breakdown</h2>
@@ -99,9 +96,9 @@ export default async function BusalaPage() {
             </tbody>
           </table>
         </div>
-      </section>
+        </section>
 
-      <section className="panel">
+        <section className="panel">
         <div className="section-heading">
           <div>
             <h2>Consented Participants</h2>
@@ -143,7 +140,8 @@ export default async function BusalaPage() {
             </tbody>
           </table>
         </div>
-      </section>
+        </section>
+      </div>
     </BusalaShell>
   );
 }

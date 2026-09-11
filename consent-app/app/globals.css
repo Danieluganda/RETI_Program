@@ -621,6 +621,12 @@ input[type="file"] {
   margin: 0 auto;
 }
 
+.records-page,
+.gate-page {
+  max-width: 1680px;
+  margin: 0 auto;
+}
+
 .dashboard-topbar {
   align-items: flex-start;
   padding-bottom: 2px;
@@ -647,6 +653,47 @@ input[type="file"] {
 
 .dashboard-filter-form select {
   min-height: 34px;
+}
+
+.records-topbar {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 14px;
+}
+
+.records-actions {
+  align-items: flex-start;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.records-actions .button {
+  min-width: 112px;
+}
+
+.records-export-panel {
+  padding-top: 14px;
+}
+
+.records-export-panel > .section-heading {
+  margin-bottom: 12px;
+}
+
+.records-export-form {
+  grid-template-columns: minmax(240px, 1.2fr) minmax(150px, 0.7fr) minmax(150px, 0.7fr) minmax(150px, 0.8fr);
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e4eaee;
+  border-radius: 7px;
+  background: #fbfcfc;
+}
+
+.records-csv-form {
+  grid-template-columns: minmax(240px, 320px) minmax(150px, 220px);
+}
+
+.records-table-panel {
+  padding-top: 14px;
 }
 
 .secondary-export-form {
@@ -779,8 +826,17 @@ tbody tr:hover td {
 
 .filters-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(140px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(6, minmax(130px, 1fr));
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e4eaee;
+  border-radius: 7px;
+  background: #fbfcfc;
+}
+
+.filters-grid label {
+  margin-bottom: 4px;
+  font-size: 0.82rem;
 }
 
 .pagination-bar {
@@ -789,7 +845,9 @@ tbody tr:hover td {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+  border-top: 1px solid var(--line);
   color: var(--muted);
+  padding-top: 12px;
 }
 
 .pagination-bar label {
@@ -817,7 +875,8 @@ tbody tr:hover td {
 
 .action-menu {
   flex-wrap: wrap;
-  min-width: 220px;
+  min-width: 180px;
+  gap: 7px 10px;
 }
 
 .action-menu a,
@@ -862,7 +921,7 @@ tbody tr:hover td {
   border: 1px dashed var(--line);
   border-radius: 6px;
   color: var(--muted);
-  padding: 16px;
+  padding: 14px;
 }
 
 .health-state {

@@ -24,11 +24,6 @@ export default async function DashboardPage({
   ]);
   const records: ConsentRecord[] = recordsResult.status === "fulfilled" ? recordsResult.value : [];
   const participants: ParticipantSummary[] = participantsResult.status === "fulfilled" ? participantsResult.value : [];
-  const dataWarning =
-    recordsResult.status === "rejected"
-      ? "Live consent records are temporarily unavailable. Showing participant list without matched consent progress."
-      : "";
-
   const enrichedRecords = withConsentParticipantContext(records, participants);
   const esos = [...new Set(participants.map((participant) => participant.esoName).filter(Boolean))].sort((a, b) =>
     a.localeCompare(b),
@@ -43,51 +38,50 @@ export default async function DashboardPage({
   return (
     <AppShell>
       <div className="dashboard-page">
-      <header className="topbar dashboard-topbar">
-        <div>
-          <h1>{selectedEso ? `${selectedEso} Progress` : "Dashboard"}</h1>
-          <p>10X Program consent collection overview by Entrepreneurship Support Organization.</p>
-        </div>
-        <div className="topbar-actions">
-          <Link className="button primary" href="/consent/new">
-            New Consent
-          </Link>
-          <Link className="button secondary" href="/records">
-            Bulk export
-          </Link>
-        </div>
-      </header>
-      {dataWarning ? <div className="error-state">{dataWarning}</div> : null}
-      <section className="panel dashboard-control-panel">
-        <form className="export-form dashboard-filter-form" action="/dashboard" method="get">
+        <header className="topbar dashboard-topbar">
           <div>
-            <label htmlFor="dashboardEso">View progress for ESO</label>
-            <select id="dashboardEso" name="eso" defaultValue={selectedEso}>
-              <option value="">All ESOs</option>
-              {esos.map((eso) => (
-                <option key={eso} value={eso}>
-                  {eso}
-                </option>
-              ))}
-            </select>
+            <h1>{selectedEso ? `${selectedEso} Progress` : "Dashboard"}</h1>
+            <p>10X Program consent collection overview by Entrepreneurship Support Organization.</p>
           </div>
-          <button className="primary" type="submit">
-            View Progress
-          </button>
-          {selectedEso && (
-            <Link className="button secondary" href="/dashboard">
-              Clear
+          <div className="topbar-actions">
+            <Link className="button primary" href="/consent/new">
+              New Consent
             </Link>
-          )}
-        </form>
-      </section>
-      <DashboardSummaryCards participants={filteredParticipants} records={filteredRecords} />
-      <ActionRequired participants={filteredParticipants} records={filteredRecords} />
-      <ConsentProgressByEso participants={participants} records={records} />
-      <section className="panel">
-        <h2>{selectedEso ? `Recent records for ${selectedEso}` : "Recent records"}</h2>
-        <RecordsTable records={filteredRecords} compact />
-      </section>
+            <Link className="button secondary" href="/records">
+              Bulk export
+            </Link>
+          </div>
+        </header>
+        <section className="panel dashboard-control-panel">
+          <form className="export-form dashboard-filter-form" action="/dashboard" method="get">
+            <div>
+              <label htmlFor="dashboardEso">View progress for ESO</label>
+              <select id="dashboardEso" name="eso" defaultValue={selectedEso}>
+                <option value="">All ESOs</option>
+                {esos.map((eso) => (
+                  <option key={eso} value={eso}>
+                    {eso}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button className="primary" type="submit">
+              View Progress
+            </button>
+            {selectedEso && (
+              <Link className="button secondary" href="/dashboard">
+                Clear
+              </Link>
+            )}
+          </form>
+        </section>
+        <DashboardSummaryCards participants={filteredParticipants} records={filteredRecords} />
+        <ActionRequired participants={filteredParticipants} records={filteredRecords} />
+        <ConsentProgressByEso participants={participants} records={records} />
+        <section className="panel">
+          <h2>{selectedEso ? `Recent records for ${selectedEso}` : "Recent records"}</h2>
+          <RecordsTable records={filteredRecords} compact />
+        </section>
       </div>
     </AppShell>
   );
