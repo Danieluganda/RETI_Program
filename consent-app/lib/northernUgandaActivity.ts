@@ -119,6 +119,26 @@ function normalizeEmail(value: string) {
   return normalizeText(value).toLowerCase();
 }
 
+function displayNameCase(value: string) {
+  return normalizeText(value)
+    .toLowerCase()
+    .replace(/\b[a-z]/g, (letter) => letter.toUpperCase());
+}
+
+function canonicalDistrictName(value: string) {
+  const clean = normalizeText(value);
+  if (!clean) return "";
+
+  const parts = clean
+    .split(",")
+    .map((part) => normalizeText(part))
+    .filter(Boolean);
+  const uniqueParts = [...new Map(parts.map((part) => [normalizeKey(part), part])).values()];
+
+  if (uniqueParts.length === 1) return displayNameCase(uniqueParts[0]);
+  return displayNameCase(uniqueParts.join(", "));
+}
+
 function phoneQuality(value: string) {
   const raw = normalizeText(value);
   const digits = raw.replace(/\D/g, "");
@@ -330,12 +350,64 @@ function matchParticipants(values: Record<string, string>, indexes: ReturnType<t
   return { participants: [], matchedBy: "" };
 }
 
+function sourceContactIndexes(rows: SourceRow[]) {
+  const byEmail = new Map<string, string[]>();
+  const byReference = new Map<string, string[]>();
+  const byName = new Map<string, string[]>();
+  const byNameEso = new Map<string, string[]>();
+
+  function add(index: Map<string, string[]>, key: string, phone: string) {
+    if (!key || !phoneQuality(phone).usable) return;
+    const existing = index.get(key) || [];
+    if (!existing.some((value) => normalizePhone(value) === normalizePhone(phone))) index.set(key, [...existing, phone]);
+  }
+
+  for (const row of rows) {
+    const phone = firstPhone(row.values);
+    const email = normalizeEmail(firstValue(row.values, ["Email"]));
+    const reference = normalizeKey(firstValue(row.values, ["Unique identifier", "Unique Key", "Enterprise Unique Identifier", "UNIQUE KEY"]));
+    const name = normalizeKey(fullName(row.values));
+    const eso = normalizeKey(esoName(row.values, row.expectedEso));
+
+    add(byEmail, email, phone);
+    add(byReference, reference, phone);
+    add(byName, name, phone);
+    if (name && eso) add(byNameEso, `${name}|${eso}`, phone);
+  }
+
+  return { byEmail, byReference, byName, byNameEso };
+}
+
+function possibleSourcePhones(values: Record<string, string>, indexes: ReturnType<typeof sourceContactIndexes>, fallbackEso: string) {
+  const candidates: string[] = [];
+  const email = normalizeEmail(firstValue(values, ["Email"]));
+  const reference = normalizeKey(firstValue(values, ["Unique identifier", "Unique Key", "Enterprise Unique Identifier", "UNIQUE KEY"]));
+  const name = normalizeKey(fullName(values));
+  const eso = normalizeKey(esoName(values, fallbackEso));
+
+  const lookups: Array<[Map<string, string[]>, string]> = [
+    [indexes.byEmail, email],
+    [indexes.byReference, reference],
+    [indexes.byNameEso, name && eso ? `${name}|${eso}` : ""],
+    [indexes.byName, name],
+  ];
+
+  for (const [index, key] of lookups) {
+    if (!key) continue;
+    for (const phone of index.get(key) || []) {
+      if (!candidates.some((candidate) => normalizePhone(candidate) === normalizePhone(phone))) candidates.push(phone);
+    }
+  }
+
+  return candidates;
+}
+
 function youthInWorkStatus(sourceSheet: string) {
   return normalizeKey(sourceSheet).includes("yiw") ? "Captured in YIW source" : "To be checked";
 }
 
 function districtName(values: Record<string, string>) {
-  return firstValue(values, ["Administrative Level2 : District", "Administrative Level2", "District"]);
+  return canonicalDistrictName(firstValue(values, ["Administrative Level2 : District", "Administrative Level2", "District"]));
 }
 
 function sourceHeaderValues(headerRow: { cells: Map<string, string> }) {
@@ -417,9 +489,11 @@ export async function getNorthernUgandaActivityGate(
 ): Promise<NorthernUgandaActivityGate> {
   const indexes = consentIndexes(records);
   const participantMatches = participantIndexes(options.participants || []);
-  const selectedDistrict = normalizeText(options.district || "");
+  const selectedDistrict = canonicalDistrictName(options.district || "");
   const selectedEso = normalizeText(options.eso || "");
-  const allRows: NorthernUgandaActivityRow[] = (await sourceRows()).map((source) => {
+  const sourceActivityRows = await sourceRows();
+  const sourceContacts = sourceContactIndexes(sourceActivityRows);
+  const allRows: NorthernUgandaActivityRow[] = sourceActivityRows.map((source) => {
     const consentMatch = matchConsent(source.values, indexes, source.expectedEso);
     const consent = consentMatch?.record;
     const participantMatch = matchParticipants(source.values, participantMatches, source.expectedEso);
@@ -427,12 +501,17 @@ export async function getNorthernUgandaActivityGate(
     const primaryParticipant = matchedParticipants[0];
     const sourcePhone = firstPhone(source.values);
     const quality = phoneQuality(sourcePhone);
+    const workbookPhoneSuggestions = possibleSourcePhones(source.values, sourceContacts, source.expectedEso).filter(
+      (phone) => normalizePhone(phone) !== normalizePhone(sourcePhone),
+    );
     const possibleCorrectPhone =
       !quality.usable && primaryParticipant?.phone && phoneQuality(primaryParticipant.phone).usable
         ? primaryParticipant.phone
         : !quality.usable && consent?.participantPhone && phoneQuality(consent.participantPhone).usable
           ? consent.participantPhone
-          : "";
+          : !quality.usable && workbookPhoneSuggestions.length
+            ? workbookPhoneSuggestions.join(" / ")
+            : "";
     const consentCompleted = Boolean(consent);
     const declinedConsent = consent?.consentDecision === "declined";
     const mainParticipantStatus =

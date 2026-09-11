@@ -84,7 +84,7 @@ export default async function NorthernUgandaActivityPage({
         </>
       ) : null}
       <span>
-        Page {currentPage} of {totalPages} - 50 per page
+        Page {currentPage} of {totalPages} | {gate.summary.totalRows} rows | {pageSize} rows/page
       </span>
       {currentPage < totalPages ? (
         <>
