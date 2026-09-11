@@ -310,7 +310,6 @@ function participantIndexes(participants: ParticipantSummary[]) {
   const byExternalId = new Map<string, ParticipantSummary[]>();
   const byPhone = new Map<string, ParticipantSummary[]>();
   const byNameEso = new Map<string, ParticipantSummary[]>();
-  const byName = new Map<string, ParticipantSummary[]>();
 
   function add(index: Map<string, ParticipantSummary[]>, key: string, participant: ParticipantSummary) {
     if (!key) return;
@@ -323,11 +322,10 @@ function participantIndexes(participants: ParticipantSummary[]) {
     if (phoneQuality(participant.phone).usable) add(byPhone, normalizePhone(participant.phone), participant);
     const name = normalizeKey(participant.fullName);
     const eso = normalizeKey(participant.esoName);
-    add(byName, name, participant);
     if (name && eso) add(byNameEso, `${name}|${eso}`, participant);
   }
 
-  return { byEmail, byExternalId, byPhone, byNameEso, byName };
+  return { byEmail, byExternalId, byPhone, byNameEso };
 }
 
 function matchParticipants(values: Record<string, string>, indexes: ReturnType<typeof participantIndexes>, fallbackEso: string) {
@@ -348,9 +346,6 @@ function matchParticipants(values: Record<string, string>, indexes: ReturnType<t
   const phone = normalizePhone(sourcePhone);
   const byPhone = phone && phoneQuality(sourcePhone).usable ? indexes.byPhone.get(phone) : undefined;
   if (byPhone?.length) return { participants: byPhone, matchedBy: "valid phone" };
-
-  const byName = name ? indexes.byName.get(name) : undefined;
-  if (byName?.length) return { participants: byName, matchedBy: "participant name only" };
 
   return { participants: [], matchedBy: "" };
 }

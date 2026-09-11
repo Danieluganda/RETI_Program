@@ -25,9 +25,12 @@ export default async function DashboardPage({
   const records: ConsentRecord[] = recordsResult.status === "fulfilled" ? recordsResult.value : [];
   const participants: ParticipantSummary[] = participantsResult.status === "fulfilled" ? participantsResult.value : [];
   const enrichedRecords = withConsentParticipantContext(records, participants);
-  const esos = [...new Set(participants.map((participant) => participant.esoName).filter(Boolean))].sort((a, b) =>
-    a.localeCompare(b),
-  );
+  const esos = [
+    ...new Set([
+      ...participants.map((participant) => participant.esoName).filter(Boolean),
+      ...enrichedRecords.map((record) => record.esoName).filter(Boolean),
+    ]),
+  ].sort((a, b) => a.localeCompare(b));
   const filteredParticipants = selectedEso
     ? participants.filter((participant) => participant.esoName === selectedEso || participant.esoId === selectedEso)
     : participants;
