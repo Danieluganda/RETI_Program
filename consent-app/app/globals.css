@@ -767,6 +767,39 @@ input[type="file"] {
   font-weight: 700;
 }
 
+.form-message.info {
+  color: var(--primary);
+}
+
+.redo-request-box {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #f2b8ad;
+  border-radius: 8px;
+  background: #fff7f5;
+}
+
+.redo-request-box p {
+  margin: 0;
+}
+
+.redo-request-box textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.inline-review-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.inline-review-form input {
+  min-width: 180px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

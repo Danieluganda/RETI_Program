@@ -7,6 +7,7 @@ const publicPaths = [
   "/consent/thank-you",
   "/api/auth",
   "/api/consents",
+  "/api/consent-redo-requests",
   "/api/esos",
   "/api/participants",
   "/api/uploads",

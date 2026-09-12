@@ -95,6 +95,34 @@ model Consent {
   @@index([createdAt])
 }
 
+model ConsentRedoRequest {
+  id                      String   @id @default(cuid())
+  participantId           String?
+  participantName         String
+  participantExternalId   String?
+  esoId                   String?
+  esoName                 String?
+  consentFormType         String
+  existingConsentId       String?
+  existingReferenceNumber String?
+  reason                  String
+  requestedByName         String?
+  requestedByContact      String?
+  status                  String   @default("pending")
+  reviewedBy              String?
+  reviewedAt              DateTime?
+  reviewNote              String?
+  usedByConsentId         String?
+  usedAt                  DateTime?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([participantId])
+  @@index([consentFormType])
+  @@index([status])
+  @@index([createdAt])
+}
+
 model Eso {
   id           String        @id @default(cuid())
   name         String        @unique

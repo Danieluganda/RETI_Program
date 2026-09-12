@@ -195,6 +195,11 @@ export function ConsentForm({
   const [participantSearch, setParticipantSearch] = useState("");
   const [participantsLoading, setParticipantsLoading] = useState(false);
   const [duplicateConsent, setDuplicateConsent] = useState<{ referenceNumber: string; participantName: string } | null>(null);
+  const [redoReason, setRedoReason] = useState("");
+  const [redoRequesterName, setRedoRequesterName] = useState("");
+  const [redoRequesterContact, setRedoRequesterContact] = useState("");
+  const [redoRequesting, setRedoRequesting] = useState(false);
+  const [redoMessage, setRedoMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const template = consentTemplates[consentFormType];
   const isPartnerConsent = consentFormType === "third-party-data-sharing";
@@ -323,6 +328,8 @@ export function ConsentForm({
     setSelectedParticipantId(participant.id);
     setParticipantSearch("");
     setDuplicateConsent(null);
+    setRedoMessage("");
+    setRedoReason("");
 
     checkDuplicateConsent(participant.id, consentFormType);
   }
@@ -331,14 +338,53 @@ export function ConsentForm({
     fetch(`/api/consents?participantId=${encodeURIComponent(participantId)}&consentFormType=${encodeURIComponent(formType)}`)
       .then((response) => response.json())
       .then((data) => {
+        if (data.canRedo) {
+          setDuplicateConsent(null);
+          setRedoMessage("Admin has approved a redo for this participant. You can submit the corrected consent.");
+          return;
+        }
         if (data.exists && data.consent) {
           setDuplicateConsent({
             referenceNumber: data.consent.referenceNumber,
             participantName: data.consent.participantName,
           });
+          setRedoMessage("");
         }
       })
       .catch(() => undefined);
+  }
+
+  async function requestRedoApproval() {
+    if (!selectedParticipant || redoRequesting) return;
+    setRedoRequesting(true);
+    setRedoMessage("");
+
+    const response = await fetch("/api/consent-redo-requests", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        participantId: selectedParticipant.id,
+        esoId: selectedParticipant.esoId || selectedEsoId,
+        esoName: selectedParticipant.esoName || selectedEsoName,
+        consentFormType,
+        reason: redoReason,
+        requestedByName: redoRequesterName,
+        requestedByContact: redoRequesterContact,
+      }),
+    });
+    const data = await response.json();
+    setRedoRequesting(false);
+
+    if (!response.ok) {
+      setRedoMessage(data.error || "Could not send redo request.");
+      return;
+    }
+
+    setRedoMessage(
+      data.redoRequest?.status === "approved"
+        ? "A redo request is already approved. You can submit the corrected consent."
+        : "Redo request sent to admin for approval.",
+    );
   }
 
   function captureGeoLocation() {
@@ -738,6 +784,8 @@ export function ConsentForm({
                     setSelectedParticipant(null);
                     setSelectedParticipantId("");
                     setParticipantSearch(selectedParticipant.fullName);
+                    setDuplicateConsent(null);
+                    setRedoMessage("");
                   }}
                 >
                   Change
@@ -787,11 +835,48 @@ export function ConsentForm({
               </p>
             )}
             {duplicateConsent && (
-              <p className="form-message error">
-                Consent for {duplicateConsent.participantName} has already been submitted under reference{" "}
-                {duplicateConsent.referenceNumber}.
-              </p>
+              <div className="form-message error redo-request-box">
+                <p>
+                  Consent for {duplicateConsent.participantName} has already been submitted under reference{" "}
+                  {duplicateConsent.referenceNumber}.
+                </p>
+                <label htmlFor="redoReason">Request admin approval to redo</label>
+                <textarea
+                  id="redoReason"
+                  value={redoReason}
+                  onChange={(event) => setRedoReason(event.target.value)}
+                  placeholder="Explain what was wrong or what needs to be corrected"
+                  rows={3}
+                />
+                <div className="grid two">
+                  <div>
+                    <label htmlFor="redoRequesterName">Requested by</label>
+                    <input
+                      id="redoRequesterName"
+                      value={redoRequesterName}
+                      onChange={(event) => setRedoRequesterName(event.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="redoRequesterContact">Contact</label>
+                    <input
+                      id="redoRequesterContact"
+                      value={redoRequesterContact}
+                      onChange={(event) => setRedoRequesterContact(event.target.value)}
+                    />
+                  </div>
+                </div>
+                <button
+                  className="secondary compact-button"
+                  type="button"
+                  disabled={redoRequesting || redoReason.trim().length < 10}
+                  onClick={requestRedoApproval}
+                >
+                  {redoRequesting ? "Sending request..." : "Send redo request"}
+                </button>
+              </div>
             )}
+            {redoMessage && <p className="form-message info">{redoMessage}</p>}
             {selectedEsoName && !participantsLoading && participantSearch.trim().length >= 2 && participants.length === 0 && !selectedParticipant && (
               <p className="field-hint">No participant matches your search.</p>
             )}

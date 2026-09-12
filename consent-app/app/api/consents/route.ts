@@ -2,8 +2,11 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import {
   getConsents,
+  getApprovedRedoRequest,
   getExistingParticipantConsent,
   isUniqueConstraintError,
+  markConsentSuperseded,
+  markRedoRequestUsedAndSupersedeExisting,
   nextReference,
   saveConsent,
   type ConsentRecord,
@@ -38,8 +41,17 @@ export async function GET(request: Request) {
 
   if (participantId && consentFormType) {
     const existingConsent = await getExistingParticipantConsent(participantId, consentFormType);
+    const approvedRedoRequest = await getApprovedRedoRequest(participantId, consentFormType);
     return NextResponse.json({
       exists: Boolean(existingConsent),
+      canRedo: Boolean(existingConsent && approvedRedoRequest),
+      redoRequest: approvedRedoRequest
+        ? {
+            id: approvedRedoRequest.id,
+            status: approvedRedoRequest.status,
+            reviewedAt: approvedRedoRequest.reviewedAt,
+          }
+        : null,
       consent: existingConsent
         ? {
             id: existingConsent.id,
@@ -78,20 +90,24 @@ export async function POST(request: Request) {
     esoId: participant.esoId || "",
     esoName: participant.eso?.name || participant.esoName || "",
   });
+  let approvedRedoRequest: Awaited<ReturnType<typeof getApprovedRedoRequest>> = undefined;
   if (existingConsent) {
-    return NextResponse.json(
-      {
-        error: `Consent for ${participant.fullName} has already been submitted.`,
-        existingConsent: {
-          id: existingConsent.id,
-          referenceNumber: existingConsent.referenceNumber,
-          participantName: existingConsent.participantName,
-          consentDate: existingConsent.consentDate,
-          consentFormType: existingConsent.consentFormType,
+    approvedRedoRequest = await getApprovedRedoRequest(participant.id, body.consentFormType || "sample-space");
+    if (!approvedRedoRequest) {
+      return NextResponse.json(
+        {
+          error: `Consent for ${participant.fullName} has already been submitted.`,
+          existingConsent: {
+            id: existingConsent.id,
+            referenceNumber: existingConsent.referenceNumber,
+            participantName: existingConsent.participantName,
+            consentDate: existingConsent.consentDate,
+            consentFormType: existingConsent.consentFormType,
+          },
         },
-      },
-      { status: 409 },
-    );
+        { status: 409 },
+      );
+    }
   }
 
   const referenceNumber = await nextReference();
@@ -184,8 +200,19 @@ export async function POST(request: Request) {
 
   let savedRecord: ConsentRecord;
   try {
+    if (existingConsent && approvedRedoRequest) {
+      await markConsentSuperseded(existingConsent.id, record.id);
+    }
     savedRecord = await saveConsent(record);
+    if (existingConsent) {
+      if (approvedRedoRequest) {
+        await markRedoRequestUsedAndSupersedeExisting(approvedRedoRequest, savedRecord.id, existingConsent.id);
+      }
+    }
   } catch (error) {
+    if (existingConsent && approvedRedoRequest) {
+      await markConsentSuperseded(existingConsent.id, "");
+    }
     if (isUniqueConstraintError(error)) {
       const existing = await getExistingParticipantConsent(participant.id, record.consentFormType, {
         participantExternalId: participant.externalId || "",
