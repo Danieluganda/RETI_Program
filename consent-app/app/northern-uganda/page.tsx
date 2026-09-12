@@ -2,7 +2,7 @@ import { AppShell } from "@/components/AppShell";
 import { withTimeout } from "@/lib/asyncTimeout";
 import { getConsents } from "@/lib/db";
 import { formatConsentDateTime } from "@/lib/dateTime";
-import { getNorthernUgandaActivityGate } from "@/lib/northernUgandaActivity";
+import { getNorthernUgandaActivityGate, type NorthernUgandaActivityGate } from "@/lib/northernUgandaActivity";
 import type { ConsentRecord } from "@/lib/db";
 import { getActiveParticipants } from "@/lib/participants";
 import type { ParticipantSummary } from "@/lib/participants";
@@ -23,6 +23,33 @@ function positivePage(value?: string) {
   return Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
 }
 
+function emptyGate(selectedDistrict: string, selectedEso: string): NorthernUgandaActivityGate {
+  return {
+    sourceFile: "Finding XY WEO, YIW & Enterprise POA Data.xlsx, Challenges UG WEO, YIW & Enterprise POA Data.xlsx",
+    selectedDistrict,
+    selectedEso,
+    districtOptions: [],
+    esoOptions: ["Challenges Uganda", "Finding XY"],
+    rows: [],
+    summary: {
+      sourceRows: 0,
+      totalRows: 0,
+      inMainDataset: 0,
+      missingFromMainDataset: 0,
+      duplicateMainMatches: 0,
+      readyForConsentRoute: 0,
+      findingXyRows: 0,
+      challengesRows: 0,
+      reached: 0,
+      completedConsent: 0,
+      pendingConsent: 0,
+      declinedConsent: 0,
+      youthInWorkCaptured: 0,
+      lastCheckedAt: new Date().toISOString(),
+    },
+  };
+}
+
 export default async function NorthernUgandaActivityPage({
   searchParams,
 }: {
@@ -36,6 +63,7 @@ export default async function NorthernUgandaActivityPage({
   let participants: ParticipantSummary[] = [];
   let consentMatchStatus = "Live consent records matched";
   let participantMatchStatus = "Main participant dataset checked";
+  let activityLoadError = "";
 
   const [recordsResult, participantsResult] = await Promise.allSettled([
     withTimeout(getConsents()),
@@ -52,7 +80,10 @@ export default async function NorthernUgandaActivityPage({
     participantMatchStatus = "Main participant dataset unavailable";
   }
 
-  const gate = await getNorthernUgandaActivityGate(consentRecords, { district: selectedDistrict, eso: selectedEso, participants });
+  const gate = await getNorthernUgandaActivityGate(consentRecords, { district: selectedDistrict, eso: selectedEso, participants }).catch((error) => {
+    activityLoadError = error instanceof Error ? error.message : "Northern Uganda workbooks could not be loaded.";
+    return emptyGate(selectedDistrict, selectedEso);
+  });
   const pageSize = 50;
   const totalPages = Math.max(1, Math.ceil(gate.summary.totalRows / pageSize));
   const currentPage = Math.min(requestedPage, totalPages);
@@ -205,6 +236,11 @@ export default async function NorthernUgandaActivityPage({
               </p>
             </div>
           </div>
+          {activityLoadError ? (
+            <div className="empty-state warning-state">
+              Northern Uganda workbook data could not be loaded: {activityLoadError}
+            </div>
+          ) : null}
           <div className="daily-update-grid">
             <div className="daily-update-card">
               <strong>{gate.summary.readyForConsentRoute}</strong>
@@ -299,6 +335,11 @@ export default async function NorthernUgandaActivityPage({
                     <td>{row.consentReference || "N/A"}</td>
                   </tr>
                 ))}
+                {!pageRows.length ? (
+                  <tr>
+                    <td colSpan={17}>No Northern Uganda activity rows match the selected filters.</td>
+                  </tr>
+                ) : null}
               </tbody>
             </table>
           </div>

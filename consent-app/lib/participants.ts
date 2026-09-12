@@ -96,6 +96,11 @@ export type ParticipantSummary = {
   source: string;
 };
 
+export type ParticipantBaselineSummary = {
+  esoName: string;
+  totalParticipants: number;
+};
+
 type LegacyParticipantRow = {
   id: string;
   externalId: string | null;
@@ -239,6 +244,61 @@ export async function getActiveParticipants() {
   }
 }
 
+export async function getActiveParticipantBaseline() {
+  try {
+    const rows = await prisma().participant.groupBy({
+      by: ["esoName"],
+      where: { status: "active" },
+      _count: { _all: true },
+      orderBy: { esoName: "asc" },
+    });
+
+    return rows
+      .map((row) => ({
+        esoName: displayEsoName(row.esoName),
+        totalParticipants: row._count._all,
+      }))
+      .filter((row) => row.esoName);
+  } catch (error) {
+    if (!isMissingColumnOrTable(error)) throw error;
+
+    const rows = await prisma().$queryRaw<Array<{ esoName: string; totalParticipants: number | bigint }>>`
+      SELECT "esoName", count(*) as "totalParticipants"
+      FROM "Participant"
+      WHERE status = 'active'
+      GROUP BY "esoName"
+      ORDER BY "esoName" ASC
+    `;
+
+    return rows
+      .map((row) => ({
+        esoName: displayEsoName(row.esoName),
+        totalParticipants: Number(row.totalParticipants),
+      }))
+      .filter((row) => row.esoName);
+  }
+}
+
+export function participantSummariesFromBaseline(baseline: ParticipantBaselineSummary[]) {
+  return baseline.flatMap((row) =>
+    Array.from({ length: row.totalParticipants }, (_, index) => ({
+      id: `baseline:${row.esoName}:${index}`,
+      externalId: "",
+      fullName: `Participant ${index + 1}`,
+      phone: "",
+      email: "",
+      esoId: "",
+      esoName: row.esoName,
+      district: "",
+      region: "",
+      sector: "",
+      status: "active",
+      createdAt: "",
+      source: "participant_baseline",
+    })),
+  );
+}
+
 export async function getParticipantDatasets() {
   try {
     const rows = await prisma().participant.findMany({
@@ -269,43 +329,44 @@ export async function getParticipantDatasets() {
 
 export async function getActiveEsos() {
   try {
-    return await prisma().eso.findMany({
+    const esos = await prisma().eso.findMany({
       where: { status: "active" },
       orderBy: { name: "asc" },
     });
+    if (esos.length) return esos;
   } catch (error) {
     if (!isMissingColumnOrTable(error)) {
       throw error;
     }
+  }
 
-    const participants = await prisma().$queryRaw<Array<{ esoName: string; esoCode: string | null }>>`
+  const participants = await prisma().$queryRaw<Array<{ esoName: string; esoCode: string | null }>>`
       SELECT DISTINCT "esoName", "esoCode"
       FROM "Participant"
       WHERE status = 'active'
       ORDER BY "esoName" ASC
     `;
 
-    return [
-      ...new Map(
-        participants
-          .filter((participant) => participant.esoName.trim())
-          .map((participant) => {
-            const name = displayEsoName(participant.esoName);
-            return [
+  return [
+    ...new Map(
+      participants
+        .filter((participant) => participant.esoName.trim())
+        .map((participant) => {
+          const name = displayEsoName(participant.esoName);
+          return [
+            name,
+            {
+              id: "",
               name,
-              {
-                id: "",
-                name,
-                code: participant.esoCode || "",
-                status: "active",
-                createdAt: new Date(0),
-                updatedAt: new Date(0),
-              },
-            ];
-          }),
-      ).values(),
-    ];
-  }
+              code: participant.esoCode || "",
+              status: "active",
+              createdAt: new Date(0),
+              updatedAt: new Date(0),
+            },
+          ];
+        }),
+    ).values(),
+  ];
 }
 
 export async function getParticipantsByEsoId(esoId: string, query = "", limit = 5000, dataset = "") {

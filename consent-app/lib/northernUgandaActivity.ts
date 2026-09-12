@@ -575,7 +575,7 @@ export async function getNorthernUgandaActivityGate(
       inMainDataset: rows.filter((row) => row.mainParticipantMatches > 0).length,
       missingFromMainDataset: rows.filter((row) => row.mainParticipantMatches === 0).length,
       duplicateMainMatches: rows.filter((row) => row.mainParticipantMatches > 1).length,
-      readyForConsentRoute: rows.filter((row) => row.consentRouteStatus === "Ready for /consent/new").length,
+      readyForConsentRoute: rows.filter((row) => row.consentRouteStatus === "Can use /consent/new").length,
       findingXyRows: rows.filter((row) => row.esoName === "Finding XY").length,
       challengesRows: rows.filter((row) => row.esoName === "Challenges Uganda").length,
       reached: rows.filter((row) => row.reachedStatus === "Reached").length,

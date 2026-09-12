@@ -6,7 +6,7 @@ import { withTimeout } from "@/lib/asyncTimeout";
 import { getConsents } from "@/lib/db";
 import type { ConsentRecord } from "@/lib/db";
 import { withConsentParticipantContext } from "@/lib/poaSample";
-import { getActiveParticipants } from "@/lib/participants";
+import { getActiveParticipantBaseline, getActiveParticipants, participantSummariesFromBaseline } from "@/lib/participants";
 import type { ParticipantSummary } from "@/lib/participants";
 
 export const dynamic = "force-dynamic";
@@ -20,10 +20,14 @@ export default async function DashboardPage({
   const selectedEso = params.eso || "";
   const [recordsResult, participantsResult] = await Promise.allSettled([
     withTimeout(getConsents()),
-    withTimeout(getActiveParticipants()),
+    withTimeout(getActiveParticipants(), 4000),
   ]);
   const records: ConsentRecord[] = recordsResult.status === "fulfilled" ? recordsResult.value : [];
-  const participants: ParticipantSummary[] = participantsResult.status === "fulfilled" ? participantsResult.value : [];
+  let participants: ParticipantSummary[] = participantsResult.status === "fulfilled" ? participantsResult.value : [];
+  if (!participants.length) {
+    const baseline = await withTimeout(getActiveParticipantBaseline(), 3000).catch(() => []);
+    participants = participantSummariesFromBaseline(baseline);
+  }
   const enrichedRecords = withConsentParticipantContext(records, participants);
   const esos = [
     ...new Set([
