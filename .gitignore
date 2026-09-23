@@ -26,3 +26,14 @@ consent-app/generated-pdfs/*
 
 .DS_Store
 Thumbs.db
+
+# Local participant / POA exports
+consent-app/gulu-northern-participants.csv
+consent-app/poa-gulu-northern-participants.csv
+consent-app/poa-finding-xy-challenges.csv
+
+# Local working datasets
+data/
+data_template/
+sample_dataset/
+email_ask/
