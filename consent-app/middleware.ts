@@ -20,7 +20,11 @@ function isPublicPath(pathname: string) {
     pathname.startsWith("/_next/") ||
     pathname === "/favicon.ico" ||
     pathname === "/login" ||
-    publicPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`))
+    pathname === "/youth-in-work" ||
+    pathname.startsWith("/api/youth-in-work/") ||
+    publicPaths
+      .filter((path) => path !== "/youth-in-work" && path !== "/api/youth-in-work")
+      .some((path) => pathname === path || pathname.startsWith(`${path}/`))
   );
 }
 
