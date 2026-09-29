@@ -154,17 +154,17 @@ export function YouthInWorkTool() {
       <header className="form-header">
         <div>
           <p className="eyebrow">10X Program</p>
-          <h1 id="yiw-title">Youth in Work Assessment Tool</h1>
-          <p className="form-intro">This assessment helps us understand young people who have gained new or improved employment opportunities through wage or self-employment.</p>
+          <h1 id="yiw-title">Youth in Work Assessment</h1>
+          <p className="form-intro">Please complete this short assessment about your work, business, and experience with the 10X Program.</p>
         </div>
       </header>
 
       <form className="a4-form yiw-form" onSubmit={submit}>
       <section className="section yiw-lookup">
-        <h2>Participant lookup</h2>
-        <p className="field-hint">Please search for the name used when signing up for the 10X Foundation Course.</p>
-        <label htmlFor="yiw-search">Search by name, phone, email, or participant reference</label>
-        <input id="yiw-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Start typing at least 2 characters" />
+        <h2>Your details</h2>
+        <p className="field-hint">First find your existing record using your name, phone, email, or participant reference. If you are not listed, choose the option below to enter your details.</p>
+        <label htmlFor="yiw-search">Find your record</label>
+        <input id="yiw-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Type at least 2 characters" />
         {participants.length ? (
           <div className="yiw-results">
             {participants.map((participant) => (
@@ -178,7 +178,7 @@ export function YouthInWorkTool() {
         ) : null}
         {!selected ? (
           <button className="button secondary compact-button" type="button" onClick={() => { setNewPerson(true); setMessage(""); }}>
-            Person not found? Add new person
+            I am not listed - enter my details
           </button>
         ) : (
           <div className="selected-participant">
@@ -190,7 +190,7 @@ export function YouthInWorkTool() {
 
       {(selected || newPerson) ? (
         <>
-          <h2>Participant details</h2>
+          <h2>About you</h2>
           <div className="grid two">
             <label>Full name<input required value={form.participantName} readOnly={Boolean(selected)} onChange={(event) => updateField("participantName", event.target.value)} /></label>
             <label>Primary email<input required type="email" value={form.participantEmail} readOnly={Boolean(selected)} onChange={(event) => updateField("participantEmail", event.target.value)} /></label>
@@ -202,7 +202,7 @@ export function YouthInWorkTool() {
             <label>Business name<input value={form.businessName} onChange={(event) => updateField("businessName", event.target.value)} /></label>
           </div>
 
-          <h2>Assessment questions</h2>
+          <h2>Your 10X experience</h2>
           <div className="grid two">
             <label>Have you completed the 10X Business Foundation Course?<select required value={form.foundationCourseStatus} onChange={(event) => updateField("foundationCourseStatus", event.target.value)}><option value="">Select answer</option><option value="yes">Yes</option><option value="no">No</option><option value="currently_enrolled">Currently enrolled</option><option value="started_but_not_completed">Started but not completed</option></select></label>
             <label>Have you earned income or money as a result of the 10X Program?<select required value={form.incomeFromProgram} onChange={(event) => updateField("incomeFromProgram", event.target.value)}><option value="">Select answer</option><option value="yes">Yes</option><option value="no">No</option></select></label>

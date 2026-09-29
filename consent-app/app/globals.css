@@ -157,7 +157,9 @@ button,
 
 .standalone-form-page {
   min-height: 100vh;
-  padding: 28px 0;
+  width: 100%;
+  padding: 28px 12px;
+  background: var(--bg);
 }
 
 .topbar {
@@ -1241,20 +1243,38 @@ tbody tr:hover td {
 }
 
 .yiw-page {
-  display: grid;
-  gap: 16px;
+  display: block;
+  width: min(210mm, 100%);
+  margin: 0 auto;
 }
 
-.yiw-lookup,
-.yiw-form {
+.yiw-lookup {
   display: grid;
   gap: 12px;
 }
 
+.yiw-form {
+  display: block;
+}
+
 .yiw-lookup h2,
-.yiw-form h2 {
+.yiw-form > h2 {
   margin: 0;
   font-size: 1.15rem;
+}
+
+.yiw-form > h2 {
+  margin-top: 22px;
+  margin-bottom: 12px;
+}
+
+.yiw-form > .grid,
+.yiw-form > label,
+.yiw-form > fieldset,
+.yiw-form > .yiw-gps,
+.yiw-form > .form-message,
+.yiw-form > .form-actions {
+  margin-top: 14px;
 }
 
 .yiw-results {
@@ -1341,7 +1361,12 @@ tbody tr:hover td {
     padding: 18px;
   }
 
-  .form-panel {
+  .standalone-form-page {
+    padding: 0;
+  }
+
+  .form-panel,
+  .standalone-form-page > .form-panel {
     width: 100%;
     min-height: auto;
     border: 0;
