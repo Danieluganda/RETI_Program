@@ -23,6 +23,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/busala">Busala Gate</Link>
           <Link href="/uncdf">UNCDF Gate</Link>
           <Link href="/northern-uganda">Northern Uganda Activity</Link>
+          <Link href="/youth-in-work">Youth in Work</Link>
         </nav>
         <div className="sidebar-user">
           <strong>{demoUser.name}</strong>

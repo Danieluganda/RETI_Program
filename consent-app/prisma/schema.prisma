@@ -123,6 +123,39 @@ model ConsentRedoRequest {
   @@index([createdAt])
 }
 
+model YouthInWorkAssessment {
+  id                        String   @id @default(cuid())
+  participantId             String
+  participant                Participant @relation(fields: [participantId], references: [id])
+  participantName           String
+  participantPhone          String?
+  participantEmail          String?
+  participantExternalId     String?
+  esoName                   String?
+  district                  String?
+  region                    String?
+  businessName              String?
+  businessSector            String?
+  employmentStatus          String?
+  youthInWorkStatus         String
+  trainingInterest          String?
+  supportNeeded             String[]
+  notes                     String?
+  assessorName              String?
+  assessmentDate            DateTime
+  source                    String   @default("youth_in_work_tool")
+  status                    String   @default("submitted")
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  @@unique([participantId])
+  @@index([participantName])
+  @@index([participantPhone])
+  @@index([participantEmail])
+  @@index([esoName])
+  @@index([assessmentDate])
+}
+
 model Eso {
   id           String        @id @default(cuid())
   name         String        @unique
@@ -146,6 +179,7 @@ model Participant {
   esoId          String?
   eso            Eso?     @relation(fields: [esoId], references: [id])
   consents       Consent[]
+  youthInWorkAssessments YouthInWorkAssessment[]
   district       String?
   region         String?
   sector         String?
