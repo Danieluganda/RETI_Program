@@ -24,11 +24,21 @@ export type YouthInWorkAssessmentInput = {
   businessName?: string;
   businessSector?: string;
   employmentStatus?: string;
+  foundationCourseStatus?: string;
+  foundationLearning?: string;
+  incomeFromProgram?: string;
+  incomeAmount?: number;
+  workImproved?: string;
+  workImprovementDescription?: string;
+  improvementOutcomes?: string[];
   youthInWorkStatus: string;
   trainingInterest?: string;
   supportNeeded?: string[];
   notes?: string;
   assessorName?: string;
+  gpsLatitude?: number;
+  gpsLongitude?: number;
+  gpsAccuracy?: number;
 };
 
 function duplicateError() {
@@ -137,11 +147,21 @@ export async function createYouthInWorkAssessment(input: YouthInWorkAssessmentIn
       businessName: normalizeText(input.businessName || "") || null,
       businessSector: normalizeText(input.businessSector || "") || null,
       employmentStatus: normalizeText(input.employmentStatus || "") || null,
+      foundationCourseStatus: normalizeText(input.foundationCourseStatus || "") || null,
+      foundationLearning: normalizeText(input.foundationLearning || "") || null,
+      incomeFromProgram: normalizeText(input.incomeFromProgram || "") || null,
+      incomeAmount: Number.isFinite(input.incomeAmount) ? input.incomeAmount : null,
+      workImproved: normalizeText(input.workImproved || "") || null,
+      workImprovementDescription: normalizeText(input.workImprovementDescription || "") || null,
+      improvementOutcomes: (input.improvementOutcomes || []).map(normalizeText).filter(Boolean),
       youthInWorkStatus: normalizeText(input.youthInWorkStatus),
       trainingInterest: normalizeText(input.trainingInterest || "") || null,
       supportNeeded: (input.supportNeeded || []).map(normalizeText).filter(Boolean),
       notes: normalizeText(input.notes || "") || null,
       assessorName: normalizeText(input.assessorName || "") || null,
+      gpsLatitude: Number.isFinite(input.gpsLatitude) ? input.gpsLatitude : null,
+      gpsLongitude: Number.isFinite(input.gpsLongitude) ? input.gpsLongitude : null,
+      gpsAccuracy: Number.isFinite(input.gpsAccuracy) ? input.gpsAccuracy : null,
       assessmentDate: new Date(),
     },
   });

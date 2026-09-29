@@ -137,11 +137,21 @@ model YouthInWorkAssessment {
   businessName              String?
   businessSector            String?
   employmentStatus          String?
+  foundationCourseStatus    String?
+  foundationLearning        String?
+  incomeFromProgram         String?
+  incomeAmount              Int?
+  workImproved              String?
+  workImprovementDescription String?
+  improvementOutcomes       String[]
   youthInWorkStatus         String
   trainingInterest          String?
   supportNeeded             String[]
   notes                     String?
   assessorName              String?
+  gpsLatitude               Float?
+  gpsLongitude              Float?
+  gpsAccuracy               Float?
   assessmentDate            DateTime
   source                    String   @default("youth_in_work_tool")
   status                    String   @default("submitted")

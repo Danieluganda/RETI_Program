@@ -11,11 +11,21 @@ CREATE TABLE IF NOT EXISTS "YouthInWorkAssessment" (
   "businessName" TEXT,
   "businessSector" TEXT,
   "employmentStatus" TEXT,
+  "foundationCourseStatus" TEXT,
+  "foundationLearning" TEXT,
+  "incomeFromProgram" TEXT,
+  "incomeAmount" INTEGER,
+  "workImproved" TEXT,
+  "workImprovementDescription" TEXT,
+  "improvementOutcomes" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
   "youthInWorkStatus" TEXT NOT NULL,
   "trainingInterest" TEXT,
   "supportNeeded" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
   "notes" TEXT,
   "assessorName" TEXT,
+  "gpsLatitude" DOUBLE PRECISION,
+  "gpsLongitude" DOUBLE PRECISION,
+  "gpsAccuracy" DOUBLE PRECISION,
   "assessmentDate" TIMESTAMP(3) NOT NULL,
   "source" TEXT NOT NULL DEFAULT 'youth_in_work_tool',
   "status" TEXT NOT NULL DEFAULT 'submitted',
@@ -42,3 +52,15 @@ CREATE INDEX IF NOT EXISTS "YouthInWorkAssessment_esoName_idx"
 
 CREATE INDEX IF NOT EXISTS "YouthInWorkAssessment_assessmentDate_idx"
   ON "YouthInWorkAssessment"("assessmentDate");
+
+ALTER TABLE "YouthInWorkAssessment"
+  ADD COLUMN IF NOT EXISTS "foundationCourseStatus" TEXT,
+  ADD COLUMN IF NOT EXISTS "foundationLearning" TEXT,
+  ADD COLUMN IF NOT EXISTS "incomeFromProgram" TEXT,
+  ADD COLUMN IF NOT EXISTS "incomeAmount" INTEGER,
+  ADD COLUMN IF NOT EXISTS "workImproved" TEXT,
+  ADD COLUMN IF NOT EXISTS "workImprovementDescription" TEXT,
+  ADD COLUMN IF NOT EXISTS "improvementOutcomes" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+  ADD COLUMN IF NOT EXISTS "gpsLatitude" DOUBLE PRECISION,
+  ADD COLUMN IF NOT EXISTS "gpsLongitude" DOUBLE PRECISION,
+  ADD COLUMN IF NOT EXISTS "gpsAccuracy" DOUBLE PRECISION;

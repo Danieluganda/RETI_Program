@@ -27,11 +27,21 @@ export async function POST(request: Request) {
       businessName: String(body.businessName || ""),
       businessSector: String(body.businessSector || ""),
       employmentStatus: String(body.employmentStatus || ""),
+      foundationCourseStatus: String(body.foundationCourseStatus || ""),
+      foundationLearning: String(body.foundationLearning || ""),
+      incomeFromProgram: String(body.incomeFromProgram || ""),
+      incomeAmount: body.incomeAmount === "" || body.incomeAmount == null ? undefined : Number(body.incomeAmount),
+      workImproved: String(body.workImproved || ""),
+      workImprovementDescription: String(body.workImprovementDescription || ""),
+      improvementOutcomes: Array.isArray(body.improvementOutcomes) ? body.improvementOutcomes.map(String) : [],
       youthInWorkStatus: String(body.youthInWorkStatus),
       trainingInterest: String(body.trainingInterest || ""),
       supportNeeded: Array.isArray(body.supportNeeded) ? body.supportNeeded.map(String) : [],
       notes: String(body.notes || ""),
       assessorName: String(body.assessorName || ""),
+      gpsLatitude: body.gpsLatitude == null ? undefined : Number(body.gpsLatitude),
+      gpsLongitude: body.gpsLongitude == null ? undefined : Number(body.gpsLongitude),
+      gpsAccuracy: body.gpsAccuracy == null ? undefined : Number(body.gpsAccuracy),
     });
 
     return NextResponse.json({ participant: result.participant, assessment: result.assessment }, { status: 201 });
