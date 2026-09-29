@@ -150,16 +150,19 @@ export function YouthInWorkTool() {
   const foundationInProgress = ["currently_enrolled", "started_but_not_completed"].includes(form.foundationCourseStatus);
 
   return (
-    <div className="yiw-page">
-      <header className="topbar">
+    <section className="form-panel yiw-page" aria-labelledby="yiw-title">
+      <header className="form-header">
         <div>
-          <h1>Youth in Work Assessment Tool</h1>
-          <p>Find the person in the participant database before completing this assessment.</p>
+          <p className="eyebrow">10X Program</p>
+          <h1 id="yiw-title">Youth in Work Assessment Tool</h1>
+          <p className="form-intro">This assessment helps us understand young people who have gained new or improved employment opportunities through wage or self-employment.</p>
         </div>
       </header>
 
-      <section className="panel yiw-lookup">
+      <form className="a4-form yiw-form" onSubmit={submit}>
+      <section className="section yiw-lookup">
         <h2>Participant lookup</h2>
+        <p className="field-hint">Please search for the name used when signing up for the 10X Foundation Course.</p>
         <label htmlFor="yiw-search">Search by name, phone, email, or participant reference</label>
         <input id="yiw-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Start typing at least 2 characters" />
         {participants.length ? (
@@ -186,7 +189,7 @@ export function YouthInWorkTool() {
       </section>
 
       {(selected || newPerson) ? (
-        <form className="panel yiw-form" onSubmit={submit}>
+        <>
           <h2>Participant details</h2>
           <div className="grid two">
             <label>Full name<input required value={form.participantName} readOnly={Boolean(selected)} onChange={(event) => updateField("participantName", event.target.value)} /></label>
@@ -221,9 +224,10 @@ export function YouthInWorkTool() {
           <label>Any other comments<textarea rows={4} value={form.notes} onChange={(event) => updateField("notes", event.target.value)} /></label>
           {message ? <p className={`form-message ${message.includes("saved") || message.includes("captured") ? "success" : "error"}`}>{message}</p> : null}
           <div className="form-actions"><button className="button primary" type="submit" disabled={saving}>{saving ? "Saving..." : "Submit assessment"}</button></div>
-        </form>
+        </>
       ) : null}
       {message && !selected && !newPerson ? <p className="form-message error">{message}</p> : null}
-    </div>
+      </form>
+    </section>
   );
 }

@@ -5,12 +5,14 @@ const publicPaths = [
   "/consent",
   "/consent/sample",
   "/consent/thank-you",
+  "/youth-in-work",
   "/api/auth",
   "/api/consents",
   "/api/consent-redo-requests",
   "/api/esos",
   "/api/participants",
   "/api/uploads",
+  "/api/youth-in-work",
 ];
 
 function isPublicPath(pathname: string) {
