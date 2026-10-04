@@ -1941,3 +1941,938 @@ tbody tr:hover td {
     width: 100%;
   }
 }
+
+.yiw-database-alert {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #991b1b;
+  background: #fff1f2;
+}
+
+.yiw-database-alert span {
+  color: #7f1d1d;
+  font-size: 0.9rem;
+}
+
+/* =========================================================
+   YOUTH IN WORK — V1 VISUAL SHELL + NEW FUNCTIONAL FLOW
+   Paste at the END of globals.css
+   ========================================================= */
+
+/* Keep the polished v1 look, but remove the old dashboard/sidebar layout. */
+.yiw-public {
+  min-height: 100vh;
+  color: #172033;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(37, 99, 235, 0.08), transparent 32rem),
+    #f5f7fb;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.yiw-public *,
+.yiw-public *::before,
+.yiw-public *::after {
+  box-sizing: border-box;
+}
+
+.yiw-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid rgba(219, 227, 239, 0.9);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+}
+
+.yiw-topbar-inner {
+  width: min(960px, calc(100% - 32px));
+  min-height: 70px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.yiw-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.yiw-brand-mark {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: #ffffff;
+  font-weight: 800;
+  background: linear-gradient(135deg, #1d4ed8, #4f46e5);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.24);
+}
+
+.yiw-brand strong,
+.yiw-brand span {
+  display: block;
+}
+
+.yiw-brand strong {
+  line-height: 1.1;
+}
+
+.yiw-brand span {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.yiw-badge {
+  padding: 7px 10px;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.yiw-wrap {
+  width: min(960px, calc(100% - 32px));
+  margin: 32px auto 60px;
+}
+
+.yiw-wrap-single {
+  display: block;
+}
+
+.yiw-hero {
+  margin-bottom: 22px;
+  padding: 30px 32px;
+  border-radius: 24px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #172554, #1e3a8a 60%, #312e81);
+  box-shadow: 0 18px 55px rgba(15, 23, 42, 0.08);
+}
+
+.yiw-hero-compact h1 {
+  max-width: 760px;
+}
+
+.yiw-hero-kicker {
+  display: inline-flex;
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  color: #dbeafe;
+  background: rgba(255, 255, 255, 0.11);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.yiw-hero h1 {
+  margin: 16px 0 12px;
+  font-size: clamp(28px, 4vw, 40px);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+}
+
+.yiw-hero p {
+  max-width: 800px;
+  margin: 0;
+  color: #dbeafe;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.yiw-form-card {
+  overflow: hidden;
+  border: 1px solid #dbe3ef;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 18px 55px rgba(15, 23, 42, 0.08);
+}
+
+.yiw-section {
+  padding: 28px 30px;
+  border-bottom: 1px solid #dbe3ef;
+}
+
+.yiw-section:last-of-type {
+  border-bottom: 0;
+}
+
+.yiw-section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.yiw-section-no {
+  min-width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  font-weight: 800;
+}
+
+.yiw-section h2 {
+  margin: 0;
+  color: #172033;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.yiw-lead {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.yiw-grid-2,
+.yiw-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.yiw-choice-grid {
+  gap: 10px;
+}
+
+.yiw-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.yiw-field-spaced {
+  margin-top: 22px;
+}
+
+.yiw-field-label {
+  margin: 0;
+  color: #293548;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.yiw-field-hint {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.yiw-required {
+  color: #b91c1c;
+}
+
+/* Critical fix: stop global input/textarea rules from shrinking these controls. */
+.yiw-public .yiw-form-card input:not([type="radio"]):not([type="checkbox"]):not([type="hidden"]),
+.yiw-public .yiw-form-card select,
+.yiw-public .yiw-form-card textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  margin: 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #172033;
+  padding: 12px 13px;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  outline: none;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.yiw-public .yiw-form-card textarea {
+  min-height: 118px;
+  resize: vertical;
+}
+
+.yiw-public .yiw-form-card input[readonly] {
+  background: #f8fafc;
+  color: #475569;
+}
+
+.yiw-public .yiw-form-card input:focus,
+.yiw-public .yiw-form-card select:focus,
+.yiw-public .yiw-form-card textarea:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.15);
+}
+
+/* Phone/email update rows */
+.yiw-edit-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: stretch;
+}
+
+.yiw-compact-button {
+  min-height: 46px;
+  white-space: nowrap;
+}
+
+/* Participant results */
+.yiw-results {
+  display: grid;
+  gap: 6px;
+  max-height: 280px;
+  margin-top: 10px;
+  overflow-y: auto;
+}
+
+.yiw-result {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  min-height: 58px;
+  justify-items: start;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #172033;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.yiw-result:hover:not(:disabled) {
+  border-color: #60a5fa;
+  background: #f8fbff;
+}
+
+.yiw-result:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.yiw-result span,
+.yiw-result em {
+  color: #64748b;
+  font-size: 12px;
+  font-style: normal;
+}
+
+.yiw-result em {
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.yiw-result:disabled em {
+  color: #b91c1c;
+}
+
+.yiw-inline-actions {
+  margin-top: 14px;
+}
+
+.yiw-selected {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 14px;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  color: #166534;
+  background: #f0fdf4;
+}
+
+.yiw-selected strong,
+.yiw-selected span {
+  display: block;
+}
+
+.yiw-selected span {
+  margin-top: 3px;
+  font-size: 12px;
+}
+
+/* Radio + checkbox cards */
+.yiw-choice-card,
+.yiw-check-card {
+  position: relative;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #293548;
+  cursor: pointer;
+  transition: 0.16s ease;
+}
+
+.yiw-choice-card:hover,
+.yiw-check-card:hover,
+.yiw-choice-card.is-selected,
+.yiw-check-card.is-selected {
+  border-color: #60a5fa;
+  background: #eff6ff;
+}
+
+.yiw-choice-card input,
+.yiw-check-card input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.yiw-choice-dot,
+.yiw-check-box {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  border: 2px solid #94a3b8;
+}
+
+.yiw-choice-dot {
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 3px #ffffff;
+}
+
+.yiw-choice-card.is-selected .yiw-choice-dot {
+  border-color: #2563eb;
+  background: #2563eb;
+}
+
+.yiw-check-box {
+  position: relative;
+  border-radius: 5px;
+}
+
+.yiw-check-card.is-selected .yiw-check-box {
+  border-color: #2563eb;
+  background: #2563eb;
+}
+
+.yiw-check-card.is-selected .yiw-check-box::after {
+  content: "✓";
+  position: absolute;
+  top: -4px;
+  left: 2px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+/* Conditional groups */
+.yiw-conditional {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px dashed #bfdbfe;
+  border-radius: 14px;
+  background: #f8fbff;
+}
+
+.yiw-inner-conditional {
+  display: grid;
+  gap: 18px;
+}
+
+/* GPS */
+.yiw-gps-card {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 14px;
+  border: 1px solid #dbe3ef;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.yiw-gps-card strong,
+.yiw-gps-card span {
+  display: block;
+}
+
+.yiw-gps-card span {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+/* Buttons */
+.yiw-button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.16s ease;
+}
+
+.yiw-primary {
+  color: #ffffff;
+  background: #2563eb;
+}
+
+.yiw-primary:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.yiw-secondary {
+  color: #334155;
+  background: #eef2f7;
+}
+
+.yiw-secondary:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.yiw-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.yiw-notice {
+  margin-top: 18px;
+  padding: 12px 13px;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  color: #78350f;
+  background: #fffbeb;
+  font-size: 12px;
+}
+
+.yiw-message {
+  margin: 20px 30px 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+}
+
+.yiw-message.success {
+  color: #166534;
+  background: #f0fdf4;
+}
+
+.yiw-message.error {
+  color: #b91c1c;
+  background: #fff1f2;
+}
+
+.yiw-draft-status {
+  margin: 18px 30px 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.yiw-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 22px 30px 28px;
+  background: #fbfdff;
+}
+
+/* Responsive */
+@media (max-width: 680px) {
+  .yiw-topbar-inner,
+  .yiw-wrap {
+    width: min(100% - 24px, 960px);
+  }
+
+  .yiw-badge {
+    display: none;
+  }
+
+  .yiw-hero,
+  .yiw-section {
+    padding: 22px 18px;
+  }
+
+  .yiw-grid-2,
+  .yiw-choice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .yiw-edit-row {
+    grid-template-columns: 1fr;
+  }
+
+  .yiw-selected,
+  .yiw-gps-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .yiw-actions {
+    padding: 18px;
+    flex-direction: column-reverse;
+  }
+
+  .yiw-actions .yiw-button {
+    width: 100%;
+  }
+}
+
+
+/* =========================================================
+   YOUTH IN WORK - SUBMISSIONS DASHBOARD
+   ========================================================= */
+
+.yiw-dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.yiw-dashboard-header {
+  align-items: flex-start;
+}
+
+.yiw-page-kicker,
+.yiw-section-kicker {
+  display: block;
+  margin-bottom: 6px;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.yiw-dashboard-header h1 {
+  margin-bottom: 5px;
+}
+
+.yiw-dashboard-filters {
+  border: 1px solid #dbe3ec;
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.yiw-filter-form {
+  display: grid;
+  grid-template-columns:
+    minmax(240px, 1.7fr)
+    repeat(4, minmax(140px, 1fr))
+    auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.yiw-filter-form > div {
+  min-width: 0;
+}
+
+.yiw-filter-form label {
+  display: block;
+  margin-bottom: 6px;
+  color: #425466;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.yiw-filter-form input,
+.yiw-filter-form select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 9px 11px;
+  color: #172033;
+  font: inherit;
+  outline: none;
+}
+
+.yiw-filter-form input:focus,
+.yiw-filter-form select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.yiw-filter-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.yiw-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.yiw-kpi-card {
+  min-width: 0;
+  border: 1px solid #dbe3ec;
+  border-radius: 15px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.yiw-kpi-card strong {
+  display: block;
+  margin: 8px 0 4px;
+  color: #101828;
+  font-size: 27px;
+  line-height: 1;
+}
+
+.yiw-kpi-label {
+  color: #475467;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.yiw-kpi-card small {
+  display: block;
+  color: #667085;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.yiw-kpi-warning {
+  background: #fffaf0;
+  border-color: #fed7aa;
+}
+
+.yiw-insight-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.yiw-insight-card {
+  min-width: 0;
+}
+
+.yiw-breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 18px;
+}
+
+.yiw-breakdown-row {
+  min-width: 0;
+}
+
+.yiw-breakdown-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  color: #344054;
+  font-size: 12px;
+}
+
+.yiw-breakdown-label span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yiw-breakdown-label strong {
+  color: #101828;
+}
+
+.yiw-breakdown-track,
+.yiw-outcome-track {
+  position: relative;
+  overflow: hidden;
+  height: 7px;
+  border-radius: 999px;
+  background: #edf2f7;
+}
+
+.yiw-breakdown-fill,
+.yiw-outcome-track span {
+  display: block;
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+  background: #2563eb;
+}
+
+.yiw-outcome-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.yiw-outcome-card {
+  border: 1px solid #e0e7ef;
+  border-radius: 14px;
+  background: #f8fafc;
+  padding: 17px;
+}
+
+.yiw-outcome-card > span {
+  color: #475467;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.yiw-outcome-card > strong {
+  display: block;
+  margin: 9px 0 12px;
+  color: #101828;
+  font-size: 26px;
+}
+
+.yiw-outcome-card small {
+  display: block;
+  margin-top: 9px;
+  color: #667085;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.yiw-register-heading {
+  align-items: center;
+}
+
+.yiw-register-count {
+  border-radius: 999px;
+  background: #eff6ff;
+  padding: 7px 11px;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.yiw-submissions-table {
+  min-width: 1120px;
+}
+
+.yiw-submissions-table th {
+  color: #475467;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.yiw-submissions-table td {
+  vertical-align: top;
+}
+
+.yiw-participant-cell,
+.yiw-table-outcome,
+.yiw-date-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.yiw-participant-cell strong,
+.yiw-table-outcome strong,
+.yiw-date-cell strong {
+  color: #101828;
+  font-size: 12px;
+}
+
+.yiw-participant-cell small,
+.yiw-table-outcome small,
+.yiw-date-cell small {
+  color: #667085;
+  font-size: 11px;
+}
+
+.yiw-status-pill {
+  display: inline-flex;
+  max-width: 180px;
+  border-radius: 999px;
+  background: #f2f4f7;
+  padding: 5px 8px;
+  color: #344054;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.yiw-table-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 28px 12px;
+  text-align: center;
+}
+
+.yiw-table-empty strong {
+  color: #101828;
+}
+
+.yiw-table-empty span,
+.yiw-empty-state {
+  color: #667085;
+  font-size: 12px;
+}
+
+@media (max-width: 1400px) {
+  .yiw-kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .yiw-filter-form {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .yiw-filter-search {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 900px) {
+  .yiw-insight-grid,
+  .yiw-outcome-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .yiw-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .yiw-filter-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .yiw-filter-search {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 620px) {
+  .yiw-kpi-grid,
+  .yiw-filter-form {
+    grid-template-columns: 1fr;
+  }
+
+  .yiw-filter-search {
+    grid-column: auto;
+  }
+
+  .yiw-filter-actions {
+    flex-wrap: wrap;
+  }
+}
