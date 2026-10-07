@@ -72,7 +72,7 @@ button,
 .shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 230px 1fr;
+  grid-template-columns: 230px minmax(0, 1fr);
 }
 
 .sidebar {
@@ -197,6 +197,16 @@ button,
   grid-template-columns: repeat(6, minmax(140px, 1fr));
   gap: 10px;
   margin-bottom: 14px;
+}
+
+.data-warning {
+  margin: 1rem 0;
+  border: 1px solid #f0b7b7;
+  border-left: 4px solid #c62828;
+  background: #fff7f7;
+  color: #7f1d1d;
+  padding: 0.85rem 1rem;
+  line-height: 1.45;
 }
 
 .richblack-cards {
@@ -1834,7 +1844,7 @@ tbody tr:hover td {
   .form-grid.two,
   .dashboard-cards,
   .filters-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .main {
@@ -2875,4 +2885,18 @@ tbody tr:hover td {
   .yiw-filter-actions {
     flex-wrap: wrap;
   }
+}
+
+/* YIW submissions: contain wide reporting tables inside the dashboard shell */
+.yiw-dashboard-page,
+.yiw-submissions-register,
+.yiw-dashboard-page .table-wrap {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.yiw-dashboard-page .table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }

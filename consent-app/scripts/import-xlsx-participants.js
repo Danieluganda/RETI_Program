@@ -8,7 +8,36 @@ for (const line of fs.readFileSync(path.join(process.cwd(), ".env"), "utf8").spl
   if (match) process.env[match[1]] = match[2].replace(/^"|"$/g, "");
 }
 
-const prisma = new PrismaClient();
+const importDatabaseUrl =
+  process.env.IMPORT_DATABASE_URL ||
+  process.env.DATABASE_URL;
+
+if (!importDatabaseUrl) {
+  throw new Error("IMPORT_DATABASE_URL or DATABASE_URL is required.");
+}
+
+const importTarget = new URL(importDatabaseUrl);
+
+if (
+  process.env.REQUIRE_LOCAL_IMPORT === "1" &&
+  !["localhost", "127.0.0.1"].includes(importTarget.hostname)
+) {
+  throw new Error(
+    `IMPORT ABORTED: local import required but target is ${importTarget.hostname}`,
+  );
+}
+
+console.log(
+  `[import-db] ${importTarget.hostname}:${importTarget.port || "5432"}${importTarget.pathname}`,
+);
+
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: importDatabaseUrl,
+    },
+  },
+});
 
 const filePath = process.argv[2];
 const source = process.argv[3] || "participant_xlsx";
@@ -166,6 +195,81 @@ async function ensureEso(name) {
   });
 }
 
+function normalizeSector(value) {
+  const cleanValue = clean(value);
+  const normalized = cleanValue
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const aliases = {
+    "agriculture": "Agriculture",
+    "trade and services": "Trade and Service",
+    "trade and service": "Trade and Service",
+    "trade & services": "Trade and Service",
+    "fashion": "Fashion",
+    "fashion and design": "Fashion",
+    "light manufacturing": "Light Manufacturing",
+    "mice": "MICE",
+    "meetings, incentives and conferences": "MICE",
+    "meetings, incentives and conferences (mice)": "MICE",
+    "meetings incentives and conferences": "MICE",
+    "health": "Health",
+  };
+
+  return aliases[normalized] || cleanValue || null;
+}
+function normalizeEmploymentStatus(value) {
+  const normalized = clean(value)
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!normalized) return null;
+
+  if (
+    normalized === "self employment" ||
+    normalized === "self employed"
+  ) {
+    return "Self-Employment";
+  }
+
+  if (
+    normalized === "wage employment" ||
+    normalized === "wage employed"
+  ) {
+    return "Wage employment";
+  }
+
+  return null;
+}
+
+function normalizeEmploymentType(value) {
+  const normalized = clean(value)
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!normalized) return null;
+
+  if (
+    normalized === "full time" ||
+    normalized === "fulltime"
+  ) {
+    return "Full-time";
+  }
+
+  if (
+    normalized === "part time" ||
+    normalized === "parttime"
+  ) {
+    return "Part-time";
+  }
+
+  return null;
+}
 async function main() {
   const rows = await readWorkbook(path.resolve(filePath));
   const [headerRow, ...dataRows] = rows.filter((row) => row.some(Boolean));
@@ -186,7 +290,13 @@ async function main() {
         preferredName ||
         [firstName, middleName, surname].filter(Boolean).join(" "),
     );
+    const youthInWorkStableId =
+      source === "youth_iw"
+        ? get(row, headers, ["id"])
+        : "";
+
     const externalId =
+      youthInWorkStableId ||
       get(row, headers, ["unique identifier", "enterprise unique identifier"]) ||
       get(row, headers, ["unique key"]) ||
       `${source}:${fullName}`;
@@ -230,7 +340,16 @@ async function main() {
       esoCode: clean(esoRaw),
       district: get(row, headers, ["administrative level2", "administrative level2 district"]),
       region: get(row, headers, ["administrative level1", "administrative level1 region"]),
-      sector: get(row, headers, ["sector"]),
+      sector: normalizeSector(get(row, headers, ["sector"])),
+
+      employmentStatus: normalizeEmploymentStatus(
+        get(row, headers, ["employment status"]),
+      ),
+
+      employmentType: normalizeEmploymentType(
+        get(row, headers, ["employment type"]),
+      ),
+
       status: "active",
       source,
     });

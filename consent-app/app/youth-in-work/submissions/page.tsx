@@ -165,6 +165,10 @@ export default async function YouthInWorkSubmissionsPage({
       assessment.esoName,
       assessment.district,
       assessment.businessSector,
+      assessment.employmentStatus,
+      assessment.employmentType,
+      assessment.participant?.employer?.fullName,
+      assessment.participant?.employer?.externalId,
     ]
       .map(normalize)
       .join(" ");
@@ -507,14 +511,32 @@ export default async function YouthInWorkSubmissionsPage({
             </div>
           </div>
 
-          <div className="table-wrap">
-            <table className="yiw-submissions-table">
+          <div
+            className="table-wrap"
+            style={{
+              width: "100%",
+              maxWidth: "100%",
+              minWidth: 0,
+              overflowX: "auto",
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
+            <table
+              className="yiw-submissions-table"
+              style={{
+                width: "100%",
+                minWidth: "1120px",
+              }}
+            >
               <thead>
                 <tr>
                   <th>Participant</th>
                   <th>ESO</th>
                   <th>District</th>
                   <th>Sector</th>
+                  <th>Employment</th>
+                  <th>Supported entrepreneur</th>
+                  <th>Evidence</th>
                   <th>Foundation Course</th>
                   <th>Income from 10X</th>
                   <th>Work improved</th>
@@ -552,6 +574,72 @@ export default async function YouthInWorkSubmissionsPage({
                       <td>
                         {assessment.businessSector ||
                           "Not recorded"}
+                      </td>
+
+                      <td>
+                        <div className="yiw-table-outcome">
+                          <strong>
+                            {assessment.employmentType ||
+                              assessment.employmentStatus ||
+                              "Not recorded"}
+                          </strong>
+
+                          {assessment.employmentStatus &&
+                          assessment.employmentType ? (
+                            <small>
+                              {assessment.employmentStatus}
+                            </small>
+                          ) : null}
+                        </div>
+                      </td>
+
+                      <td>
+                        {assessment.participant?.employer ? (
+                          <div className="yiw-participant-cell">
+                            <strong>
+                              {
+                                assessment.participant.employer
+                                  .fullName
+                              }
+                            </strong>
+
+                            <small>
+                              {assessment.participant.employer
+                                .externalId ||
+                                assessment.participant.employer
+                                  .phone ||
+                                "Existing supported entrepreneur"}
+                            </small>
+
+                            {assessment.participant.employer
+                              .sector ? (
+                              <small>
+                                {
+                                  assessment.participant
+                                    .employer.sector
+                                }
+                              </small>
+                            ) : null}
+                          </div>
+                        ) : (
+                          "Not linked"
+                        )}
+                      </td>
+
+                      <td>
+                        <div className="yiw-table-outcome">
+                          <strong>
+                            {assessment.evidenceFileKey
+                              ? "Captured"
+                              : "Not captured"}
+                          </strong>
+
+                          {assessment.evidenceFileKey ? (
+                            <small>
+                              {assessment.evidenceFileKey}
+                            </small>
+                          ) : null}
+                        </div>
                       </td>
 
                       <td>
@@ -608,7 +696,7 @@ export default async function YouthInWorkSubmissionsPage({
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={8}>
+                    <td colSpan={11}>
                       <div className="yiw-table-empty">
                         <strong>
                           No submissions match these filters.

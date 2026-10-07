@@ -19,72 +19,72 @@ model User {
 }
 
 model Consent {
-  id                       String   @id @default(cuid())
-  referenceNumber          String   @unique
-  participantId            String?
-  participant              Participant? @relation(fields: [participantId], references: [id])
-  esoId                    String?
-  eso                      Eso?     @relation(fields: [esoId], references: [id])
-  participantName          String
-  participantPhone         String?
-  participantExternalId    String?
-  programName              String   @default("10X: Enabling growth of MSMEs through the digital economy")
-  esoName                  String?
-  consentFormType          String   @default("sample-space")
-  implementingOrganization String?
-  dataCollectorOrganization String?
-  dataCollectorContact     String?
-  privacyOrganization      String?
-  privacyPolicyUrl         String?
-  withdrawalContact        String?
-  dataSharingOrganization  String?
-  consentDecision          String
-  serviceRequired          String?
-  authorizedPartners       String[] @default([])
-  dataShared               String[] @default([])
-  informationUnderstood    Boolean  @default(false)
-  signingMethod            String
-  signatureFile            String
-  signatureFileKey         String
-  interpreterUsed          Boolean  @default(false)
-  interpreterName          String?
-  interpreterOrganization  String?
-  interpreterLanguage      String?
-  interpreterSignatureFile String?
+  id                          String       @id @default(cuid())
+  referenceNumber             String       @unique
+  participantId               String?
+  participant                 Participant? @relation(fields: [participantId], references: [id])
+  esoId                       String?
+  eso                         Eso?         @relation(fields: [esoId], references: [id])
+  participantName             String
+  participantPhone            String?
+  participantExternalId       String?
+  programName                 String       @default("10X: Enabling growth of MSMEs through the digital economy")
+  esoName                     String?
+  consentFormType             String       @default("sample-space")
+  implementingOrganization    String?
+  dataCollectorOrganization   String?
+  dataCollectorContact        String?
+  privacyOrganization         String?
+  privacyPolicyUrl            String?
+  withdrawalContact           String?
+  dataSharingOrganization     String?
+  consentDecision             String
+  serviceRequired             String?
+  authorizedPartners          String[]     @default([])
+  dataShared                  String[]     @default([])
+  informationUnderstood       Boolean      @default(false)
+  signingMethod               String
+  signatureFile               String
+  signatureFileKey            String
+  interpreterUsed             Boolean      @default(false)
+  interpreterName             String?
+  interpreterOrganization     String?
+  interpreterLanguage         String?
+  interpreterSignatureFile    String?
   interpreterSignatureFileKey String?
-  collectorName            String?
-  collectorId              String?
-  collector                User?    @relation(fields: [collectorId], references: [id])
-  consentDate              DateTime
-  consentFormVersion       String   @default("10X-SAMPLE-v1")
-  geoCaptureStatus         String   @default("not_requested")
-  geoLatitude              Float?
-  geoLongitude             Float?
-  geoAccuracy              Float?
-  geoCapturedAt            DateTime?
-  geoCaptureError          String?
-  auditFormOpenedAt        DateTime?
-  auditSubmittedAt         DateTime?
-  auditServerReceivedAt    DateTime?
-  auditTimezone            String?
-  auditLanguage            String?
-  auditUserAgent           String?
-  auditIpAddress           String?
-  auditScreenWidth         Float?
-  auditScreenHeight        Float?
-  auditSubmissionPath      String?
-  auditRequestHost         String?
-  verificationStatus       String   @default("auto_verified")
-  riskScore                Int      @default(0)
-  riskFlags                String[] @default([])
-  verificationCheckedAt    DateTime?
-  pdfFile                  String?
-  pdfFileKey               String?
-  pdfGeneratedAt           DateTime?
-  pdfStatus                String   @default("pending")
-  supersededById           String?
-  status                   String   @default("locked")
-  createdAt                DateTime @default(now())
+  collectorName               String?
+  collectorId                 String?
+  collector                   User?        @relation(fields: [collectorId], references: [id])
+  consentDate                 DateTime
+  consentFormVersion          String       @default("10X-SAMPLE-v1")
+  geoCaptureStatus            String       @default("not_requested")
+  geoLatitude                 Float?
+  geoLongitude                Float?
+  geoAccuracy                 Float?
+  geoCapturedAt               DateTime?
+  geoCaptureError             String?
+  auditFormOpenedAt           DateTime?
+  auditSubmittedAt            DateTime?
+  auditServerReceivedAt       DateTime?
+  auditTimezone               String?
+  auditLanguage               String?
+  auditUserAgent              String?
+  auditIpAddress              String?
+  auditScreenWidth            Float?
+  auditScreenHeight           Float?
+  auditSubmissionPath         String?
+  auditRequestHost            String?
+  verificationStatus          String       @default("auto_verified")
+  riskScore                   Int          @default(0)
+  riskFlags                   String[]     @default([])
+  verificationCheckedAt       DateTime?
+  pdfFile                     String?
+  pdfFileKey                  String?
+  pdfGeneratedAt              DateTime?
+  pdfStatus                   String       @default("pending")
+  supersededById              String?
+  status                      String       @default("locked")
+  createdAt                   DateTime     @default(now())
 
   @@index([participantId])
   @@index([esoId])
@@ -96,7 +96,7 @@ model Consent {
 }
 
 model ConsentRedoRequest {
-  id                      String   @id @default(cuid())
+  id                      String    @id @default(cuid())
   participantId           String?
   participantName         String
   participantExternalId   String?
@@ -108,14 +108,14 @@ model ConsentRedoRequest {
   reason                  String
   requestedByName         String?
   requestedByContact      String?
-  status                  String   @default("pending")
+  status                  String    @default("pending")
   reviewedBy              String?
   reviewedAt              DateTime?
   reviewNote              String?
   usedByConsentId         String?
   usedAt                  DateTime?
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
   @@index([participantId])
   @@index([consentFormType])
@@ -124,45 +124,102 @@ model ConsentRedoRequest {
 }
 
 model YouthInWorkAssessment {
-  id                        String   @id @default(cuid())
-  participantId             String
-  participant                Participant @relation(fields: [participantId], references: [id])
-  participantName           String
-  participantPhone          String?
-  participantEmail          String?
-  participantExternalId     String?
-  esoName                   String?
-  district                  String?
-  region                    String?
-  businessName              String?
-  businessSector            String?
-  employmentStatus          String?
-  foundationCourseStatus    String?
-  foundationLearning        String?
-  incomeFromProgram         String?
-  incomeAmount              Int?
-  workImproved              String?
+  id            String      @id @default(cuid())
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id])
+
+  // Participant snapshot
+  participantName       String
+  participantPhone      String?
+  participantEmail      String?
+  participantExternalId String?
+  esoName               String?
+
+  // Demographics
+  dateOfBirth DateTime? @db.Date
+
+  // Legacy compatibility during v3 transition.
+  yearOfBirth Int?
+
+  gender String?
+
+  // Location
+  region    String?
+  district  String?
+  subcounty String?
+  parish    String?
+  village   String?
+
+  // Enterprise / employment
+  businessName     String?
+  businessSector   String?
+  businessSize     String?
+  employmentStatus String?
+  employmentType   String?
+  educationLevel   String?
+
+  // Inclusion
+  hasDisability   Boolean?
+  disabilityType  String?
+  isRefugee       Boolean?
+  countryOfOrigin String?
+
+  // Foundation Course
+  foundationCourseStatus String?
+  foundationLearning     String?
+
+  // Income
+  incomeFromProgram String?
+  incomeAmount      Int?
+
+  // Working conditions
+  workImproved               String?
   workImprovementDescription String?
-  improvementOutcomes       String[]
-  youthInWorkStatus         String
-  trainingInterest          String?
-  supportNeeded             String[]
-  notes                     String?
-  assessorName              String?
-  gpsLatitude               Float?
-  gpsLongitude              Float?
-  gpsAccuracy               Float?
-  assessmentDate            DateTime
-  source                    String   @default("youth_in_work_tool")
-  status                    String   @default("submitted")
-  createdAt                 DateTime @default(now())
-  updatedAt                 DateTime @updatedAt
+  improvementOutcomes        String[] @default([])
+
+  // Digital adoption
+  digitalMarketsAccess   Boolean  @default(false)
+  digitalMarketPlatforms String[] @default([])
+
+  digitalFinanceAccess    Boolean  @default(false)
+  digitalFinanceProviders String[] @default([])
+
+  businessEfficiencyAccess    Boolean  @default(false)
+  businessEfficiencyPlatforms String[] @default([])
+
+  // Existing compatibility fields
+  youthInWorkStatus String
+  trainingInterest  String?
+  supportNeeded     String[] @default([])
+
+  notes        String?
+  assessorName String?
+
+  // Evidence photo captured/uploaded with the YIW assessment
+  evidenceFileKey String?
+
+  // Automatic background GPS
+  gpsCaptureStatus String    @default("not_requested")
+  gpsLatitude      Float?
+  gpsLongitude     Float?
+  gpsAccuracy      Float?
+  gpsCapturedAt    DateTime?
+  gpsCaptureError  String?
+
+  assessmentDate DateTime
+  source         String   @default("youth_in_work_tool")
+  status         String   @default("submitted")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@unique([participantId])
   @@index([participantName])
   @@index([participantPhone])
   @@index([participantEmail])
   @@index([esoName])
+  @@index([district])
+  @@index([region])
+  @@index([businessSize])
   @@index([assessmentDate])
 }
 
@@ -178,28 +235,69 @@ model Eso {
 }
 
 model Participant {
-  id             String   @id @default(cuid())
-  externalId     String?  @unique
+  id             String  @id @default(cuid())
+  externalId     String? @unique
   fullName       String
   normalizedName String
-  phone          String?
-  email          String?
-  esoName        String
-  esoCode        String?
-  esoId          String?
-  eso            Eso?     @relation(fields: [esoId], references: [id])
-  consents       Consent[]
+
+  phone String?
+  email String?
+
+  esoName String
+  esoCode String?
+  esoId   String?
+  eso     Eso?    @relation(fields: [esoId], references: [id])
+
+  consents               Consent[]
   youthInWorkAssessments YouthInWorkAssessment[]
-  district       String?
-  region         String?
-  sector         String?
-  status         String   @default("active")
-  source         String   @default("participant_csv")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+
+  // Employment relationship
+  employerParticipantId String?
+  employer              Participant?  @relation("ParticipantEmployment", fields: [employerParticipantId], references: [id], onDelete: SetNull)
+  employees             Participant[] @relation("ParticipantEmployment")
+
+  // Location
+  region    String?
+  district  String?
+  subcounty String?
+  parish    String?
+  village   String?
+
+  // Demographics
+  dateOfBirth DateTime? @db.Date
+
+  // Legacy compatibility during v3 transition.
+  yearOfBirth Int?
+
+  gender String?
+
+  // Enterprise / employment
+  businessName     String?
+  sector           String?
+  businessSize     String?
+  employmentStatus String?
+  employmentType   String?
+  educationLevel   String?
+
+  // Inclusion profile
+  hasDisability   Boolean?
+  disabilityType  String?
+  isRefugee       Boolean?
+  countryOfOrigin String?
+
+  status    String   @default("active")
+  source    String   @default("participant_csv")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([esoName])
   @@index([esoId])
+  @@index([employerParticipantId])
   @@index([normalizedName])
+  @@index([phone])
+  @@index([email])
+  @@index([district])
+  @@index([region])
+  @@index([businessSize])
   @@index([status])
 }

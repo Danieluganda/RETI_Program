@@ -15,17 +15,24 @@
   "dependencies": {
     "@azure/storage-blob": "^12.33.0",
     "@prisma/client": "^5.22.0",
+    "csv-parse": "^7.0.3",
+    "dotenv": "^18.0.4",
+    "exceljs": "^4.4.0",
     "jszip": "^3.10.1",
-    "next": "^15.4.0",
+    "next": "^15.5.27",
     "pdf-lib": "^1.17.1",
     "prisma": "^5.22.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "typescript": "^5.7.0"
+  },
+  "overrides": {
+    "postcss": "8.5.28"
   }
 }
