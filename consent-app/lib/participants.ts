@@ -222,6 +222,44 @@ export async function getParticipantsByEso(esoName: string, query = "", limit = 
   }
 }
 
+
+export async function getDashboardParticipants(): Promise<ParticipantSummary[]> {
+  const participants = await prisma().participant.findMany({
+    where: { status: "active" },
+    select: {
+      id: true,
+      externalId: true,
+      fullName: true,
+      phone: true,
+      email: true,
+      esoId: true,
+      esoName: true,
+      district: true,
+      region: true,
+      sector: true,
+      status: true,
+      createdAt: true,
+      source: true,
+    },
+  });
+
+  return participants.map((participant) => ({
+    id: participant.id,
+    externalId: participant.externalId || "",
+    fullName: participant.fullName,
+    phone: participant.phone || "",
+    email: participant.email || "",
+    esoId: participant.esoId || "",
+    esoName: displayEsoName(participant.esoName),
+    district: participant.district || "",
+    region: participant.region || "",
+    sector: participant.sector || "",
+    status: participant.status,
+    createdAt: participant.createdAt.toISOString(),
+    source: participant.source || "",
+  }));
+}
+
 export async function getActiveParticipants() {
   try {
     const participants = await prisma().participant.findMany({
