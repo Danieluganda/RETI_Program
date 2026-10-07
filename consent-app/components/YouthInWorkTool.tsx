@@ -2118,7 +2118,7 @@ export function YouthInWorkTool() {
                 >
                   <option value="">Select Entrepreneur Support Organization</option>
                   {esoOptions.map((eso) => (
-                    <option key={eso} value={eso}>{eso}</option>
+                    <option key={eso} value={eso}>{eso === "ECHAI/Excelhort" ? "EHCAI" : eso}</option>
                   ))}
                 </select>
                 <span className="yiw-field-hint">

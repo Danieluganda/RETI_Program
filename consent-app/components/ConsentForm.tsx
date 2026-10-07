@@ -601,7 +601,7 @@ export function ConsentForm({
               </option>
               {esos.map((eso) => (
                 <option key={eso.id || eso.name} value={eso.id || eso.name}>
-                  {eso.name}
+                  {eso.name === "ECHAI/Excelhort" ? "EHCAI" : eso.name}
                 </option>
               ))}
             </select>
