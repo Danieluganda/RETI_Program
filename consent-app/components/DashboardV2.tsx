@@ -7,20 +7,31 @@ import { formatConsentDateTime } from "@/lib/dateTime";
 export function DashboardSummaryCards({
   participants,
   records,
+  participantsUnavailable = false,
+  recordsUnavailable = false,
 }: {
   participants: ParticipantSummary[];
   records: ConsentRecord[];
+  participantsUnavailable?: boolean;
+  recordsUnavailable?: boolean;
 }) {
   const stats = getDashboardStats(participants, records);
   const hasConsentRecords = records.length > 0;
   const hasParticipantBaseline = participants.length > 0;
+  const participantValue = participantsUnavailable
+    ? "Unavailable"
+    : hasParticipantBaseline
+      ? stats.totalParticipants
+      : hasConsentRecords
+        ? "Not synced"
+        : 0;
   const cards = [
-    ["Total Participants", hasParticipantBaseline ? stats.totalParticipants : hasConsentRecords ? "Not synced" : 0],
-    ["Consent Records", stats.consentRecords],
-    ["Consented", stats.consented],
-    ["Declined", stats.declined],
-    ["Pending Consent", hasParticipantBaseline ? stats.pendingConsent : hasConsentRecords ? "N/A" : 0],
-    ["Consent Coverage", hasParticipantBaseline ? `${stats.coverage.toFixed(1)}%` : "N/A"],
+    ["Total Participants", participantValue],
+    ["Consent Records", recordsUnavailable ? "Unavailable" : stats.consentRecords],
+    ["Consented", recordsUnavailable ? "Unavailable" : stats.consented],
+    ["Declined", recordsUnavailable ? "Unavailable" : stats.declined],
+    ["Pending Consent", participantsUnavailable ? "Unavailable" : hasParticipantBaseline ? stats.pendingConsent : hasConsentRecords ? "N/A" : 0],
+    ["Consent Coverage", participantsUnavailable || recordsUnavailable ? "Unavailable" : hasParticipantBaseline ? `${stats.coverage.toFixed(1)}%` : "N/A"],
   ];
 
   return (
@@ -38,12 +49,16 @@ export function DashboardSummaryCards({
 export function ConsentProgressByEso({
   participants,
   records,
+  participantsUnavailable = false,
+  recordsUnavailable = false,
 }: {
   participants: ParticipantSummary[];
   records: ConsentRecord[];
+  participantsUnavailable?: boolean;
+  recordsUnavailable?: boolean;
 }) {
   const rows = getEsoProgress(participants, records);
-  const hasParticipantBaseline = participants.length > 0;
+  const hasParticipantBaseline = participants.length > 0 && !participantsUnavailable;
 
   return (
     <section className="panel">
@@ -52,7 +67,11 @@ export function ConsentProgressByEso({
           <h2>Consent Progress by ESO</h2>
           <p>
             Current finalized consent records by ESO
-            {hasParticipantBaseline ? " against the active participant baseline." : ". Participant baseline is not synced yet."}
+            {hasParticipantBaseline
+              ? " against the active participant baseline."
+              : participantsUnavailable
+                ? ". Participant baseline is currently unavailable."
+                : ". Participant baseline is not synced yet."}
           </p>
         </div>
       </div>
@@ -77,12 +96,12 @@ export function ConsentProgressByEso({
                   <td>
                     <Link href={`/dashboard?eso=${encodeURIComponent(row.eso)}`}>{row.eso || "Unassigned"}</Link>
                   </td>
-                  <td>{row.totalParticipants || (row.consented || row.declined ? "Not synced" : 0)}</td>
-                  <td>{row.consented}</td>
-                  <td>{row.declined}</td>
-                  <td>{row.totalParticipants ? row.pending : row.consented || row.declined ? "N/A" : 0}</td>
-                  <td>{row.totalParticipants ? `${row.coverage.toFixed(1)}%` : "N/A"}</td>
-                  <td>{row.lastConsentAt ? formatConsentDateTime(row.lastConsentAt) : "N/A"}</td>
+                  <td>{participantsUnavailable ? "Unavailable" : row.totalParticipants || (row.consented || row.declined ? "Not synced" : 0)}</td>
+                  <td>{recordsUnavailable ? "Unavailable" : row.consented}</td>
+                  <td>{recordsUnavailable ? "Unavailable" : row.declined}</td>
+                  <td>{participantsUnavailable || recordsUnavailable ? "Unavailable" : row.totalParticipants ? row.pending : row.consented || row.declined ? "N/A" : 0}</td>
+                  <td>{participantsUnavailable || recordsUnavailable ? "Unavailable" : row.totalParticipants ? `${row.coverage.toFixed(1)}%` : "N/A"}</td>
+                  <td>{recordsUnavailable ? "Unavailable" : row.lastConsentAt ? formatConsentDateTime(row.lastConsentAt) : "No finalized consent"}</td>
                   <td>
                     <Link href={row.totalParticipants ? `/participants/pending?eso=${encodeURIComponent(row.eso)}` : `/records?eso=${encodeURIComponent(row.eso)}`}>
                       {row.totalParticipants ? "Open pending" : "Review records"}
@@ -103,10 +122,24 @@ export function ConsentProgressByEso({
 export function ActionRequired({
   participants,
   records,
+  participantsUnavailable = false,
+  recordsUnavailable = false,
 }: {
   participants: ParticipantSummary[];
   records: ConsentRecord[];
+  participantsUnavailable?: boolean;
+  recordsUnavailable?: boolean;
 }) {
+  if (participantsUnavailable || recordsUnavailable) {
+    return (
+      <section className="panel">
+        <h2>Action Required</h2>
+        <div className="data-warning">
+          Dashboard checks are paused because live database data is unavailable. No zero count should be treated as a confirmed result.
+        </div>
+      </section>
+    );
+  }
   const issues = getActionRequired(participants, records);
   const hasConsentRecords = records.length > 0;
   const hasParticipantBaseline = participants.length > 0;

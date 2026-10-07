@@ -23,8 +23,10 @@ export default async function DashboardPage({
     withTimeout(getActiveParticipants(), 4000),
   ]);
   const records: ConsentRecord[] = recordsResult.status === "fulfilled" ? recordsResult.value : [];
+  const recordsUnavailable = recordsResult.status === "rejected";
+  const participantsUnavailable = participantsResult.status === "rejected";
   let participants: ParticipantSummary[] = participantsResult.status === "fulfilled" ? participantsResult.value : [];
-  if (!participants.length) {
+  if (!participants.length && !participantsUnavailable) {
     const baseline = await withTimeout(getActiveParticipantBaseline(), 3000).catch(() => []);
     participants = participantSummariesFromBaseline(baseline);
   }
@@ -82,9 +84,30 @@ export default async function DashboardPage({
             )}
           </form>
         </section>
-        <DashboardSummaryCards participants={filteredParticipants} records={filteredRecords} />
-        <ActionRequired participants={filteredParticipants} records={filteredRecords} />
-        <ConsentProgressByEso participants={participants} records={records} />
+        {(recordsUnavailable || participantsUnavailable) && (
+          <div className="data-warning" role="status">
+            Live database data is temporarily unavailable. Counts marked “Unavailable” are not zero and have not been deleted.
+            Please check the database connection before making operational decisions.
+          </div>
+        )}
+        <DashboardSummaryCards
+          participants={filteredParticipants}
+          records={filteredRecords}
+          participantsUnavailable={participantsUnavailable}
+          recordsUnavailable={recordsUnavailable}
+        />
+        <ActionRequired
+          participants={filteredParticipants}
+          records={filteredRecords}
+          participantsUnavailable={participantsUnavailable}
+          recordsUnavailable={recordsUnavailable}
+        />
+        <ConsentProgressByEso
+          participants={filteredParticipants}
+          records={filteredRecords}
+          participantsUnavailable={participantsUnavailable}
+          recordsUnavailable={recordsUnavailable}
+        />
         <section className="panel">
           <h2>{selectedEso ? `Recent records for ${selectedEso}` : "Recent records"}</h2>
           <RecordsTable records={filteredRecords} compact />
